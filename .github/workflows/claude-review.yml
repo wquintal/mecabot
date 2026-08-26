@@ -19,6 +19,12 @@ permissions:
   contents: read
   pull-requests: write
   issues: read
+  # Requis par claude-code-action : elle échange un jeton OIDC contre un jeton
+  # d'application GitHub pour commenter. Sans cette permission, l'action échoue
+  # sur « Could not fetch an OIDC token » après trois tentatives — constaté sur
+  # la PR #1. Ce n'est pas un accès au dépôt, c'est le droit de demander un
+  # jeton d'identité à GitHub.
+  id-token: write
 
 concurrency:
   group: claude-review-${{ github.event.pull_request.number }}
