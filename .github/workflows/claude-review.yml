@@ -19,12 +19,6 @@ permissions:
   contents: read
   pull-requests: write
   issues: read
-  # Requis par claude-code-action : elle échange un jeton OIDC contre un jeton
-  # d'application GitHub pour commenter. Sans cette permission, l'action échoue
-  # sur « Could not fetch an OIDC token » après trois tentatives — constaté sur
-  # la PR #1. Ce n'est pas un accès au dépôt, c'est le droit de demander un
-  # jeton d'identité à GitHub.
-  id-token: write
 
 concurrency:
   group: claude-review-${{ github.event.pull_request.number }}
@@ -47,6 +41,17 @@ jobs:
         uses: anthropics/claude-code-action@1f291e1cfe0f5fc21db2aef19af844591600ade7 # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Par défaut, l'action demande un jeton OIDC puis l'échange contre un
+          # jeton d'**application** Claude Code, ce qui exige d'installer
+          # `github.com/apps/claude` sur le dépôt. Constaté sur la PR #1 :
+          # « Claude Code is not installed on this repository ».
+          #
+          # Fournir explicitement le jeton du workflow court-circuite cet
+          # échange. Une dépendance de moins, et les permissions restent celles
+          # déclarées ci-dessus — l'application, elle, aurait apporté sa propre
+          # portée. Contrepartie assumée : les commentaires apparaissent sous
+          # `github-actions[bot]` plutôt que sous une identité Claude.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           use_sticky_comment: 'true'
           prompt: |
             Relis cette pull request. Réponds en français.
