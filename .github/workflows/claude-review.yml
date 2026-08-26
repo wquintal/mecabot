@@ -52,7 +52,21 @@ jobs:
           # portée. Contrepartie assumée : les commentaires apparaissent sous
           # `github-actions[bot]` plutôt que sous une identité Claude.
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          use_sticky_comment: 'true'
+
+          # ⚠️ Sans ces deux réglages, l'action **relit sans rien publier**.
+          # Constaté sur la PR #1 : session réussie, treize tours, 0,61 $, deux
+          # refus de permission, et aucun commentaire — un relecteur qui coûte
+          # sans relire, c'est-à-dire exactement le mode de défaillance
+          # silencieuse décrit en `docs/12` §6.3.
+          #
+          # `track_progress` force le mode à commentaire de suivi et fournit à
+          # Claude le contexte de la *pull request*. `--allowedTools` lui donne
+          # les outils de publication : sans autorisation explicite, l'appel est
+          # refusé. Patron repris de `examples/pr-review-comprehensive.yml` du
+          # dépôt de l'action.
+          track_progress: 'true'
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
           prompt: |
             Relis cette pull request. Réponds en français.
 
