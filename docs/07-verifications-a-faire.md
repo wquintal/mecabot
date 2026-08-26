@@ -32,7 +32,7 @@ Les items 1 à 4 sont gratuits et prennent moins d'une heure au total. Ils devra
 > **Deux items non bloquants ajoutés**, à faire avant la première ligne de code et sans le véhicule :
 >
 > - **Vérifier si l'OBDLink EX se contente de l'alimentation USB** ou s'il exige la broche 16 du J1962. ⚠️ [NON VÉRIFIÉ] — test de trente secondes, et la réponse décide si l'item 4bis a une moitié faisable au bureau, adaptateur branché au Mac seul.
-> - **Mettre en place `docs.yml` + markdownlint** sur les douze documents (`12` §7), ce qui s'applique dès aujourd'hui puisque le dépôt est un projet de documentation. Prévoir un ajustement de règles pour du texte français.
+> - ~~**Mettre en place `docs.yml` + markdownlint**~~ ✅ **Clos le 2026-08-26.** Fait sur les treize documents, dossier propre. L'ajustement de règles anticipé ici n'a pas eu lieu pour la raison prévue : **une seule règle a été désactivée** (`MD060`, cosmétique), et **aucun des vingt signalements restants ne portait sur le français ni sur la longueur des lignes**. Détail mesuré en `12` §7.
 
 ---
 

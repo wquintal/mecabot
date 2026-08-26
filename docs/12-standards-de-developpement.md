@@ -197,18 +197,22 @@ Sur un projet personnel sans cette flotte, supprimer la porte de relecture humai
 >
 > L'alternative ci-dessus est levée par le premier terme : **la flotte est en place, donc la règle devient adoptable.** Quatre relecteurs d'angles différents, sur un dépôt public :
 >
-> | Relecteur | Angle | Configuration |
-> |---|---|---|
-> | Gemini Code Review | Relecture générale | Déjà en place avant cette session |
-> | CodeRabbit | Relecture générale, plus les invariants du projet | `.coderabbit.yaml`, `path_instructions` par type de fichier |
-> | Claude Code Review | Ciblé sur les huit interdits par construction | `.github/workflows/claude-review.yml` |
-> | `cargo-deny` | Licences, avis de sécurité, provenance des sources | `deny.toml` |
+> | Relecteur | Angle | Configuration | Actif |
+> |---|---|---|---|
+> | Gemini Code Review | Relecture générale | Déjà en place avant cette session | ✅ |
+> | CodeRabbit | Relecture générale, plus les invariants du projet | `.coderabbit.yaml`, `path_instructions` par type de fichier | ✅ application installée le 2026-08-26 |
+> | Claude Code Review | Ciblé sur les huit interdits par construction | `.github/workflows/claude-review.yml` | ✅ secret posé le 2026-08-26 |
+> | `cargo-deny` | Licences, avis de sécurité, provenance des sources | `deny.toml` | ⏸️ en veille jusqu'au premier `Cargo.toml` |
+>
+> **La colonne « Actif » est la seule qui compte.** Un fichier de configuration présent au dépôt ne prouve rien : `.coderabbit.yaml` sans l'application installée et `claude-review.yml` sans le secret `ANTHROPIC_API_KEY` sont des relecteurs qui ne relisent pas. Ces deux activations sont hors du dépôt — elles ne se lisent pas dans le diff, donc elles se vérifient sur une vraie *pull request*, pas en relisant les fichiers.
 >
 > **Ce qui rend la substitution honnête, et non un habillage :** les trois relecteurs de code sont indépendants — modèles différents, éditeurs différents, points de défaillance différents. Une flotte d'un seul agent n'aurait pas remplacé la porte humaine, elle l'aurait supprimée en la nommant autrement.
 >
 > ⚠️ **Ce que la flotte ne couvre pas, et qu'il faut savoir :** les *pull requests* issues de forks ne sont pas relues par Claude. Le déclencheur est `pull_request` et non `pull_request_target`, précisément pour que le secret d'API ne soit jamais exposé à du code de fork. Sur un dépôt public, c'est le bon sens de la marche — mais ça veut dire qu'une contribution externe est relue par trois relecteurs au lieu de quatre.
 >
 > ⛔ **Corollaire à ne pas retourner.** Cette règle n'est citable que tant que la flotte tourne réellement. Si les trois relecteurs sont désactivés, retirés du dépôt ou laissés en échec silencieux, **la porte humaine redevient obligatoire** — l'ordre logique va de la flotte vers la règle, jamais l'inverse.
+>
+> **L'échec silencieux est le mode de défaillance à surveiller**, plus que la désactivation volontaire. Une clé d'API expirée, un quota dépassé, une application désinstallée par accident : la *pull request* fusionne, la vérification obligatoire `docs` est verte, et personne n'a relu. Rien dans l'outillage ne signale l'absence d'un relecteur — c'est une lacune connue de ce montage, pas un oubli de rédaction.
 
 ### 6.4 Deux constats plus favorables
 
