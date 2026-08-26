@@ -122,9 +122,12 @@ commuté) impose un fusible près de la source.
 - **GitHub Actions ne supporte pas les ancres YAML.** Dupliquer plutôt
   qu'ancrer.
 - **Il n'y a pas de porte de relecture humaine sur le diff** — elle est remplacée
-  par la flotte d'agents (Gemini, CodeRabbit, Claude, cargo-deny). Cette règle
-  n'est adoptable **que** parce que la flotte existe ; ne pas la citer pour
-  contourner une objection.
+  par **trois relecteurs de code** indépendants : Gemini, CodeRabbit, Claude.
+  `cargo-deny` est une porte de dépendances, pas un relecteur, et ne compte pas
+  dans ce total. Cette règle n'est adoptable **que** parce que la flotte existe
+  réellement, et le plancher de trois est exactement l'état actuel : ne pas la
+  citer pour contourner une objection, et ne pas la citer du tout si un
+  relecteur est tombé.
 
 ## Dérogation assumée
 

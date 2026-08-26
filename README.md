@@ -103,18 +103,22 @@ Il n'y a pas de porte de relecture humaine sur le diff. Elle est remplacée par
 une flotte d'agents d'angles différents, ce qui n'est défendable que parce que
 la flotte existe réellement :
 
+**Trois relecteurs de code**, indépendants les uns des autres :
+
 | Relecteur | Rôle |
 |-----------|------|
 | Gemini Code Review | Relecture générale |
 | CodeRabbit | Relecture générale, [configurée](.coderabbit.yaml) avec les invariants du projet |
 | Claude Code Review | [Relecture ciblée](.github/workflows/claude-review.yml) sur les huit invariants ci-dessus |
-| `cargo-deny` | Licences, avis de sécurité, provenance des sources |
-| `markdownlint-cli2` | Le dossier lui-même |
+
+Plus deux portes automatiques, qui ne relisent pas du code et ne comptent donc
+pas dans ce total : `cargo-deny` (licences, avis de sécurité, provenance des
+sources) et `markdownlint-cli2` (le dossier lui-même).
 
 Les *pull requests* issues de forks ne sont pas relues par Claude : le
 déclencheur est `pull_request` et non `pull_request_target`, donc le secret
-d'API n'est jamais exposé à du code de fork. Elles restent couvertes par les
-autres relecteurs.
+d'API n'est jamais exposé à du code de fork. Une contribution externe est donc
+relue par deux relecteurs au lieu de trois.
 
 ---
 

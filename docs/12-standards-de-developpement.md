@@ -195,22 +195,24 @@ Sur un projet personnel sans cette flotte, supprimer la porte de relecture humai
 
 > ### ✅ Tranché le 2026-08-26 — la flotte existe
 >
-> L'alternative ci-dessus est levée par le premier terme : **la flotte est en place, donc la règle devient adoptable.** Quatre relecteurs d'angles différents, sur un dépôt public :
+> L'alternative ci-dessus est levée par le premier terme : **la flotte est en place, donc la règle devient adoptable.** Elle compte **trois relecteurs de code** et **une porte de dépendances** — ce ne sont pas la même chose, et les confondre gonfle le décompte :
 >
-> | Relecteur | Angle | Configuration | Actif |
+> | Outil | Angle | Configuration | Actif |
 > |---|---|---|---|
-> | Gemini Code Review | Relecture générale | Déjà en place avant cette session | ✅ |
-> | CodeRabbit | Relecture générale, plus les invariants du projet | `.coderabbit.yaml`, `path_instructions` par type de fichier | ✅ application installée le 2026-08-26 |
-> | Claude Code Review | Ciblé sur les huit interdits par construction | `.github/workflows/claude-review.yml` | ✅ secret posé le 2026-08-26 |
-> | `cargo-deny` | Licences, avis de sécurité, provenance des sources | `deny.toml` | ⏸️ en veille jusqu'au premier `Cargo.toml` |
+> | Gemini Code Review | Relecture générale de code | Déjà en place avant cette session | ✅ |
+> | CodeRabbit | Relecture générale de code, plus les invariants du projet | `.coderabbit.yaml`, `path_instructions` par type de fichier | ✅ application installée le 2026-08-26 |
+> | Claude Code Review | Relecture de code ciblée sur les huit interdits par construction | `.github/workflows/claude-review.yml` | ✅ secret posé le 2026-08-26 |
+> | `cargo-deny` | **Pas un relecteur de code** — licences, avis de sécurité, provenance des sources | `deny.toml` | ⏸️ en veille jusqu'au premier `Cargo.toml` |
+>
+> **Le décompte qui vaut, à la date du 2026-08-26 :** **trois relecteurs de code actifs** sur une *pull request* interne, **deux** sur une *pull request* issue d'un fork (voir ci-dessous), et **zéro** porte de dépendances tant qu'il n'y a pas de `Cargo.toml`.
 >
 > **La colonne « Actif » est la seule qui compte.** Un fichier de configuration présent au dépôt ne prouve rien : `.coderabbit.yaml` sans l'application installée et `claude-review.yml` sans le secret `ANTHROPIC_API_KEY` sont des relecteurs qui ne relisent pas. Ces deux activations sont hors du dépôt — elles ne se lisent pas dans le diff, donc elles se vérifient sur une vraie *pull request*, pas en relisant les fichiers.
 >
 > **Ce qui rend la substitution honnête, et non un habillage :** les trois relecteurs de code sont indépendants — modèles différents, éditeurs différents, points de défaillance différents. Une flotte d'un seul agent n'aurait pas remplacé la porte humaine, elle l'aurait supprimée en la nommant autrement.
 >
-> ⚠️ **Ce que la flotte ne couvre pas, et qu'il faut savoir :** les *pull requests* issues de forks ne sont pas relues par Claude. Le déclencheur est `pull_request` et non `pull_request_target`, précisément pour que le secret d'API ne soit jamais exposé à du code de fork. Sur un dépôt public, c'est le bon sens de la marche — mais ça veut dire qu'une contribution externe est relue par trois relecteurs au lieu de quatre.
+> ⚠️ **Ce que la flotte ne couvre pas, et qu'il faut savoir :** les *pull requests* issues de forks ne sont pas relues par Claude. Le déclencheur est `pull_request` et non `pull_request_target`, précisément pour que le secret d'API ne soit jamais exposé à du code de fork. Sur un dépôt public, c'est le bon sens de la marche — mais ça veut dire qu'une contribution externe est relue par **deux** relecteurs de code au lieu de trois.
 >
-> ⛔ **Corollaire à ne pas retourner.** Cette règle n'est citable que tant que la flotte tourne réellement. Si les trois relecteurs sont désactivés, retirés du dépôt ou laissés en échec silencieux, **la porte humaine redevient obligatoire** — l'ordre logique va de la flotte vers la règle, jamais l'inverse.
+> ⛔ **Corollaire à ne pas retourner.** Cette règle n'est citable que tant que la flotte tourne réellement. Si les relecteurs sont désactivés, retirés du dépôt ou laissés en échec silencieux, **la porte humaine redevient obligatoire** — l'ordre logique va de la flotte vers la règle, jamais l'inverse. **Le plancher est de trois relecteurs de code indépendants sur une *pull request* interne**, ce qui est exactement l'état actuel : il n'y a aucune marge.
 >
 > **L'échec silencieux est le mode de défaillance à surveiller**, plus que la désactivation volontaire. Une clé d'API expirée, un quota dépassé, une application désinstallée par accident : la *pull request* fusionne, la vérification obligatoire `docs` est verte, et personne n'a relu. Rien dans l'outillage ne signale l'absence d'un relecteur — c'est une lacune connue de ce montage, pas un oubli de rédaction.
 
@@ -271,7 +273,7 @@ Quelques règles générales de ce standard méritent malgré tout d'être reten
 | Emplacement des données d'exécution | **Répertoires natifs de la plateforme sous le nom `mecabot`** — pas `~/.punt-labs/` | `09` §7 |
 | Mode d'emploi de punt-kit | **Emprunt sélectif et cité, révision épinglée** — pas d'adoption, pas de contribution amont par défaut | §1 de ce document |
 | Visibilité du dépôt | **Public, tel quel** — `wquintal/mecabot`, dossier compris | §9.1 ci-dessous |
-| Relecture du diff | **Flotte de quatre relecteurs, pas de porte humaine** — Gemini, CodeRabbit, Claude, `cargo-deny` | §6.3, encadré du 2026-08-26 |
+| Relecture du diff | **Trois relecteurs de code, pas de porte humaine** — Gemini, CodeRabbit, Claude ; plus `cargo-deny` comme porte de dépendances, qui n'est pas un relecteur | §6.3, encadré du 2026-08-26 |
 | Application de la règle « aucune dépendance GPL » | **Liste d'autorisation en CI**, la GPL exclue par omission | `deny.toml`, `rust.yml` tâche `deny` |
 
 ### 9.1 La publication, et la déclaration qu'elle emporte
