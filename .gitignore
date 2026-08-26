@@ -1,0 +1,37 @@
+# ⛔ Données de couche 4 — ne quittent jamais la machine (docs/11 §4, docs/09 §7)
+# VIN, As-Built, CALID/CVN, odomètre, historique d'entretien.
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+/data/
+/logs/
+
+# ⛔ Traces série capturées.
+# Elles constituent le premier jeu de test du projet (docs/10 §9), MAIS une trace
+# contient le VIN dès qu'elle inclut un Mode $09 ou un $22 F190. Elles se versent
+# à la main après relecture et anonymisation, jamais par un `git add .`.
+/traces/
+*.trace
+*.serial.log
+
+# Rust
+/target/
+**/*.rs.bk
+Cargo.lock.orig
+
+# macOS
+.DS_Store
+._*
+
+# Éditeurs
+.idea/
+.vscode/
+*.swp
+*~
+
+# Local
+.env
+.envrc
+.tmp/

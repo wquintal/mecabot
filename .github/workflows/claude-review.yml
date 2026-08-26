@@ -1,0 +1,91 @@
+name: claude-review
+
+# Troisième relecteur de la flotte, à côté de Gemini Code Review et CodeRabbit.
+# Trois relecteurs d'angles différents sont ce qui rend adoptable la règle
+# « la relecture du diff appartient aux agents » de `docs/12` §6.3 — cette règle
+# n'est sûre que si la flotte existe réellement.
+#
+# ⚠️ Sûreté sur un dépôt public : le déclencheur est `pull_request` et **non**
+# `pull_request_target`. Les PR issues de forks n'ont donc pas accès au secret
+# `ANTHROPIC_API_KEY` et ne sont pas relues par Claude. C'est volontaire :
+# `pull_request_target` exécuterait du code de fork avec accès au secret.
+# Les PR de forks restent couvertes par Gemini, CodeRabbit et la CI.
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: read
+
+concurrency:
+  group: claude-review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  review:
+    name: claude-review
+    # Ne tourne pas sur les PR de forks, où le secret est indisponible.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Claude review
+        uses: anthropics/claude-code-action@1f291e1cfe0f5fc21db2aef19af844591600ade7 # v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          use_sticky_comment: 'true'
+          prompt: |
+            Relis cette pull request. Réponds en français.
+
+            Mecabot est un serveur MCP de diagnostic automobile OBD-II / UDS en
+            **lecture seule**, écrit en Rust. Le dossier de préconception est dans
+            `docs/` ; `docs/09` porte l'architecture, `docs/10` la conception du
+            serveur MCP, `docs/11` le modèle de connaissance véhicule, `docs/12`
+            les standards de développement.
+
+            Vérifie en priorité les invariants suivants, qui sont des interdits
+            par construction et non des préférences de style :
+
+            1. ⛔ **Aucun outil, sous-commande ou fonction de commande brute.**
+               Pas de `send_command`, `send_raw`, ni passe-plat AT, sur aucune
+               surface — ni MCP, ni CLI, ni bibliothèque, même derrière un
+               drapeau de développement. Un tel chemin annule à lui seul
+               l'énumération fermée de services. Voir `docs/10` §8.
+            2. ⛔ **L'encodeur UDS n'accepte qu'une énumération fermée de
+               services** : `$22`, `$19`, `$3E`, `$10` et les modes OBD-II
+               normalisés. Signale tout code capable d'émettre `$2E`, `$2F`,
+               `$31`, `$11`, `$14`, `$27`, `$28` ou `$85`. Voir `docs/09` §6.
+            3. ⛔ **Jamais de balayage d'identifiants de service.** Balayer des
+               DID avec `$22` est sans danger ; balayer des services peut
+               réinitialiser un module ou actionner une sortie physique.
+            4. ⛔ **Aucune donnée de couche 4 ne sort de la machine ni n'entre
+               dans un journal** : VIN, As-Built, CALID/CVN, odomètre,
+               historique d'entretien. Une empreinte est acceptable, la valeur
+               en clair non. Voir `docs/11` §4 et `docs/12` §4.2.
+            5. ⛔ **Aucune dépendance GPL.** `deny.toml` l'applique en CI ;
+               signale toute tentative de contournement ou d'ajout d'exception.
+            6. ⚠️ **Aucun fait sur un véhicule particulier écrit dans le code.**
+               La connaissance véhicule vit en données, sur cinq couches. Une
+               constante Ford dans le code est un défaut. Voir `docs/11` §1.
+            7. ⚠️ **Un seul propriétaire du port série par machine.** Tout code
+               qui ouvrirait le périphérique hors de l'acteur propriétaire est
+               un défaut. Voir `docs/09` §11.2.
+            8. ⚠️ **Les erreurs sont nommées et distinctes.** Un échec remonté
+               en « erreur » générique fait raisonner l'agent faux. En
+               particulier `7F .. 31` est de l'information, pas une erreur.
+               Voir `docs/10` §4.
+
+            Ensuite, la relecture ordinaire : correction, cas limites, gestion
+            d'erreurs, lisibilité, couverture de tests.
+
+            Sois concis et concret. Signale ce qui est faux ou risqué ; ne
+            commente pas le style pour le style. Si tu ne trouves rien de
+            substantiel, dis-le en une phrase.

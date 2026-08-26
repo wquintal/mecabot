@@ -1,0 +1,25 @@
+{
+  // Origine : standard `github.md` de punt-kit — tout dépôt fait tourner un
+  // `docs.yml` avec markdownlint-cli2, y compris les dépôts de documentation.
+
+  "config": {
+    "extends": ".markdownlint.jsonc"
+  },
+
+  "globs": [
+    "**/*.md"
+  ],
+
+  "ignores": [
+    ".git/**",
+    "node_modules/**",
+    "target/**",
+    ".tmp/**",
+    ".claude/**",
+    "traces/**"
+  ],
+
+  "outputFormatters": [
+    ["markdownlint-cli2-formatter-default"]
+  ]
+}

@@ -1,0 +1,60 @@
+# CodeRabbit — deuxième relecteur de la flotte (docs/12 §6.3).
+# Gratuit sur dépôt public. L'application GitHub doit être installée à la main
+# sur le dépôt ; ce fichier ne fait que la configurer.
+
+language: fr-CA
+
+reviews:
+  profile: assertive
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+
+  path_filters:
+    - '!target/**'
+    - '!traces/**'
+    - '!**/*.sqlite'
+
+  path_instructions:
+    - path: 'docs/**/*.md'
+      instructions: >-
+        Dossier de préconception en français. Ne pas commenter le style de
+        rédaction ni proposer de reformulation. Signaler uniquement : les
+        contradictions entre documents, les références croisées cassées
+        (« voir `09` §4 » pointant vers une section inexistante), les faits
+        contredits ailleurs dans le dossier, et les affirmations présentées
+        comme vérifiées alors qu'elles portent une étiquette [NON VÉRIFIÉ].
+
+    - path: '**/*.rs'
+      instructions: >-
+        Mecabot est un serveur MCP de diagnostic automobile en LECTURE SEULE.
+        Invariants à vérifier en priorité, chacun étant un interdit par
+        construction et non une préférence de style :
+        (1) aucune commande brute ni passe-plat AT, sur aucune surface, même
+        derrière un drapeau — voir docs/10 §8 ;
+        (2) l'encodeur UDS n'accepte que $22, $19, $3E, $10 et les modes OBD-II
+        normalisés — signaler tout chemin vers $2E, $2F, $31, $11, $14, $27,
+        $28, $85 — voir docs/09 §6 ;
+        (3) jamais de balayage d'identifiants de service ;
+        (4) aucune donnée de couche 4 en clair dans un journal ou un export :
+        VIN, As-Built, CALID/CVN, odomètre — une empreinte est acceptable ;
+        (5) aucun fait sur un véhicule particulier écrit dans le code, la
+        connaissance véhicule vit en données — voir docs/11 §1 ;
+        (6) un seul propriétaire du port série par machine — voir docs/09 §11.2 ;
+        (7) les erreurs sont nommées et distinctes ; 7F .. 31 est de
+        l'information, pas une erreur — voir docs/10 §4.
+
+    - path: 'deny.toml'
+      instructions: >-
+        Ce fichier applique la règle « aucune dépendance GPL » de docs/09 §1.
+        Signaler toute licence ajoutée à `allow`, toute entrée dans
+        `exceptions` ou `advisories.ignore` sans justification datée, et tout
+        retrait d'une entrée de `bans.deny`.
+
+chat:
+  auto_reply: true

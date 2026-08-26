@@ -1,0 +1,94 @@
+name: rust
+
+# ⚠️ Ce workflow ne se déclenche pas encore : aucun fichier Rust n'existe.
+# Les filtres `paths` ci-dessous le mettent en veille jusqu'au premier commit
+# de code, puis il s'applique dès la première ligne — pas après coup, où
+# l'introduction d'une porte de qualité coûte une session de rattrapage.
+#
+# ⛔ Ne pas ajouter `rust` aux vérifications obligatoires de la branche `main`
+# tant qu'il n'a pas tourné au moins une fois : une vérification requise qui
+# ne s'exécute jamais bloque toutes les fusions.
+#
+# Le standard `github.md` de punt-kit n'a aucune ligne Rust (docs/12 §2) —
+# ce fichier est la transposition locale de ce qu'il impose pour Python.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'deny.toml'
+      - 'src/**'
+      - 'crates/**'
+      - '.github/workflows/rust.yml'
+  pull_request:
+    paths:
+      - 'Cargo.toml'
+      - 'Cargo.lock'
+      - 'deny.toml'
+      - 'src/**'
+      - 'crates/**'
+      - '.github/workflows/rust.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: rust-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Toolchain
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
+        with:
+          toolchain: stable
+          components: rustfmt, clippy
+
+      - name: Format
+        run: cargo fmt --all --check
+
+      - name: Clippy
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+  test:
+    name: test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Toolchain
+        uses: dtolnay/rust-toolchain@6c977a6ca4077a0ceb28ffbe03f59d46e9ac8772 # v1
+        with:
+          toolchain: stable
+
+      # Les étapes 1 et 2 de `docs/10` §10 se développent contre le transport
+      # de rejeu, donc la suite tourne entièrement sans véhicule ni adaptateur.
+      - name: Test
+        run: cargo test --all-features --workspace
+
+  deny:
+    name: deny
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      # ⭐ La porte qui applique la règle « aucune dépendance GPL » de
+      # `docs/09` §1. Voir les commentaires de `deny.toml`.
+      - name: cargo-deny
+        uses: EmbarkStudios/cargo-deny-action@3c6349835b2b7b196a839186cb8b78e02f7b5f25 # v2.1.1
+        with:
+          command: check licenses bans sources advisories

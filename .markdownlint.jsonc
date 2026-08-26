@@ -1,0 +1,64 @@
+{
+  // Configuration markdownlint pour un dossier de préconception en français,
+  // rédigé en prose longue. Origine : standard `github.md` de punt-kit, ajusté.
+
+  "default": true,
+
+  // MD013 — longueur de ligne. Désactivé : les documents sont en prose non
+  // rewrappée, et un retour à la ligne dur nuit à la relecture des diffs.
+  "MD013": false,
+
+  // MD033 — HTML inline. Autorisé de façon restreinte pour les détails repliables.
+  "MD033": {
+    "allowed_elements": ["details", "summary", "br"]
+  },
+
+  // MD060 — remplissage des barres verticales de tableau. Désactivé : la règle
+  // déduit un style « compact » de la première ligne de séparation rencontrée
+  // (`|---|---|`) puis l'exige partout, ce qui produisait 534 signalements
+  // purement cosmétiques dans un dossier écrit sur plusieurs semaines. Le
+  // rendu GitHub est identique dans les deux styles ; la règle n'attrape
+  // aucun défaut réel ici. MD056 (nombre de colonnes), qui en attrape, reste
+  // active.
+  "MD060": false,
+
+  // MD036 — emphase utilisée comme titre. Désactivé : le dossier utilise
+  // massivement des paragraphes ouverts en gras comme intertitres légers,
+  // ce qui est un choix de rédaction assumé et non une erreur de structure.
+  "MD036": false,
+
+  // MD024 — titres identiques. Autorisés s'ils ne sont pas frères,
+  // ce qui arrive légitimement entre sections numérotées.
+  "MD024": {
+    "siblings_only": true
+  },
+
+  // MD041 — le premier titre doit être de niveau 1. Conservé.
+
+  // MD029 — numérotation des listes ordonnées : imposer l'incrément réel.
+  "MD029": {
+    "style": "ordered"
+  },
+
+  // MD046 — style des blocs de code : clôturés.
+  "MD046": {
+    "style": "fenced"
+  },
+
+  // MD044 — casse des noms propres du projet et de son domaine.
+  "MD044": {
+    "names": [
+      "Mecabot",
+      "FORScan",
+      "OBDLink",
+      "SQLite",
+      "Rust",
+      "GitHub",
+      "Raspberry Pi",
+      "JavaScript",
+      "TypeScript"
+    ],
+    "code_blocks": false,
+    "html_elements": false
+  }
+}
