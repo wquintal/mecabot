@@ -29,12 +29,9 @@ contient le dossier, aucun code applicatif n'existe. La section
   `ecu-diagnostics` (GPL-3.0) et `socketcan` (Linux uniquement). **Porte écrite
   mais pas encore exercée** : `cargo-deny` dort derrière `guard` tant qu'il n'y
   a pas de `Cargo.toml`.
-- Flotte de relecture par agents : CodeRabbit (`.coderabbit.yaml`) et Claude
-  Code Review (`claude-review.yml`, huit invariants du projet), tous deux
-  observés actifs sur la première *pull request*. Gemini Code Review est visé
-  comme troisième relecteur mais **n'est pas installé sur ce dépôt** au
-  2026-08-27 ; le plancher de trois n'est donc pas tenu et la porte humaine
-  reste requise (`docs/12` §6.3).
+- Relecture par agent : **CodeRabbit** (`.coderabbit.yaml`), configuré avec les
+  invariants du projet par `path_instructions`. Il **s'ajoute** à la lecture
+  humaine du diff au lieu de la remplacer.
 
 ### Decided
 
@@ -57,5 +54,11 @@ Les principales, dans l'ordre où elles ont été prises :
 - Emprunt **sélectif** aux standards punt-kit : les standards se transposent,
   l'outillage est inopérant en Rust (`docs/12`).
 - Dépôt **public**, sans licence accordée pour l'instant.
+- **La relecture du diff reste humaine**, avec CodeRabbit en plus. Le montage à
+  trois relecteurs agents décidé le 2026-08-26, qui aurait supprimé la porte
+  humaine selon le standard `github.md` de punt-kit, a été **renversé le
+  2026-08-27** après mesure sur une vraie *pull request* : Gemini n'était pas
+  installé sur ce dépôt et `claude-review` coûtait de l'ordre de 0,60 $US par
+  tour d'API. `claude-review.yml` est conservé désactivé (`docs/12` §6.3).
 
 [Unreleased]: https://github.com/wquintal/mecabot/commits/main
