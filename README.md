@@ -99,17 +99,18 @@ est tenue par le schéma de données : une donnée marquée
 
 ## Relecture
 
-Il n'y a pas de porte de relecture humaine sur le diff. Elle est remplacée par
-une flotte d'agents d'angles différents, ce qui n'est défendable que parce que
-la flotte existe réellement :
+La porte de relecture humaine sur le diff est remplacée par une flotte d'agents
+d'angles différents — ce qui n'est défendable que tant que la flotte existe
+réellement, et se relève sur de vraies *pull requests* plutôt que sur les
+fichiers de configuration présents ici :
 
 **Trois relecteurs de code**, indépendants les uns des autres :
 
-| Relecteur | Rôle |
-|-----------|------|
-| Gemini Code Review | Relecture générale |
-| CodeRabbit | Relecture générale, [configurée](.coderabbit.yaml) avec les invariants du projet |
-| Claude Code Review | [Relecture ciblée](.github/workflows/claude-review.yml) sur les invariants ci-dessus, plus l'exigence d'erreurs nommées et distinctes |
+| Relecteur | Rôle | Actif |
+|-----------|------|-------|
+| Gemini Code Review | Relecture générale | ⛔ pas installé sur ce dépôt, au 2026-08-27 |
+| CodeRabbit | Relecture générale, [configurée](.coderabbit.yaml) avec les invariants du projet | ✅ |
+| Claude Code Review | [Relecture ciblée](.github/workflows/claude-review.yml) sur les interdits par construction, tels qu'énoncés dans le *prompt* du workflow | ✅ |
 
 Plus deux portes automatiques, qui ne relisent pas du code et ne comptent donc
 pas dans ce total : `cargo-deny` (licences, avis de sécurité, provenance des
@@ -118,7 +119,16 @@ sources) et `markdownlint-cli2` (le dossier lui-même).
 Les *pull requests* issues de forks ne sont pas relues par Claude : le
 déclencheur est `pull_request` et non `pull_request_target`, donc le secret
 d'API n'est jamais exposé à du code de fork. Une contribution externe est donc
-relue par deux relecteurs au lieu de trois.
+relue par deux relecteurs au lieu de trois, et c'est le cas où la porte humaine
+**n'est pas** levée : le diff se lit avant fusion.
+
+⚠️ **Le compte n'est pas tenu aujourd'hui.** Au 2026-08-27, Gemini n'a laissé
+aucune trace sur la première *pull request* de ce dépôt — deux relecteurs
+répondent, pas trois. Tant que c'est le cas, la relecture humaine du diff reste
+requise, y compris sur une branche interne (`12` §6.3). C'est cité ici plutôt
+que corrigé en silence parce que c'est précisément le mode de défaillance que ce
+montage doit surveiller : rien, dans l'outillage, ne signale un relecteur
+absent.
 
 ---
 

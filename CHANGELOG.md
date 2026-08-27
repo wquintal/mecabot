@@ -24,12 +24,17 @@ contient le dossier, aucun code applicatif n'existe. La section
   test, cargo-deny), ce dernier mis en veille par une tâche `guard` qui teste la
   présence de `Cargo.toml`. Les filtres `paths` seuls n'y suffisaient pas :
   `deny.toml` et `rust.yml` y figurent, donc le commit initial l'a déclenché.
-- `deny.toml` — liste d'autorisation de licences qui applique en CI la règle
-  « aucune dépendance GPL » de `docs/09` §1, et interdictions ciblées sur
-  `ecu-diagnostics` (GPL-3.0) et `socketcan` (Linux uniquement).
-- Flotte de relecture par agents : Gemini Code Review, CodeRabbit
-  (`.coderabbit.yaml`), Claude Code Review (`claude-review.yml`, huit
-  invariants du projet).
+- `deny.toml` — liste d'autorisation de licences qui exprime la règle « aucune
+  dépendance GPL » de `docs/09` §1, et interdictions ciblées sur
+  `ecu-diagnostics` (GPL-3.0) et `socketcan` (Linux uniquement). **Porte écrite
+  mais pas encore exercée** : `cargo-deny` dort derrière `guard` tant qu'il n'y
+  a pas de `Cargo.toml`.
+- Flotte de relecture par agents : CodeRabbit (`.coderabbit.yaml`) et Claude
+  Code Review (`claude-review.yml`, huit invariants du projet), tous deux
+  observés actifs sur la première *pull request*. Gemini Code Review est visé
+  comme troisième relecteur mais **n'est pas installé sur ce dépôt** au
+  2026-08-27 ; le plancher de trois n'est donc pas tenu et la porte humaine
+  reste requise (`docs/12` §6.3).
 
 ### Decided
 

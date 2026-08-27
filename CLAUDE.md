@@ -125,9 +125,13 @@ commuté) impose un fusible près de la source.
   par **trois relecteurs de code** indépendants : Gemini, CodeRabbit, Claude.
   `cargo-deny` est une porte de dépendances, pas un relecteur, et ne compte pas
   dans ce total. Cette règle n'est adoptable **que** parce que la flotte existe
-  réellement, et le plancher de trois est exactement l'état actuel : ne pas la
-  citer pour contourner une objection, et ne pas la citer du tout si un
-  relecteur est tombé.
+  réellement : ne pas la citer pour contourner une objection, et ne pas la citer
+  du tout si un relecteur est tombé.
+  ⚠️ **Au 2026-08-27 le plancher n'est pas tenu** — Gemini n'est pas actif sur ce
+  dépôt (aucune trace sur la PR #1), donc deux relecteurs seulement et **la
+  relecture humaine du diff reste requise**. Une *pull request* de fork est de
+  toute façon en permanence à deux relecteurs et garde la porte humaine
+  (`docs/12` §6.3).
 
 ## Dérogation assumée
 
