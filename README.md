@@ -57,7 +57,7 @@ documents sont là pour qui veut vérifier un raisonnement.
 ## Les interdits par construction
 
 Ce sont des décisions verrouillées, pas des réglages. Elles sont vérifiées à la
-relecture de chaque *pull request* par la flotte d'agents, et pour partie en CI.
+relecture de chaque *pull request*, et pour partie en CI.
 
 - **Aucune commande brute.** Pas de `send_command`, pas de passe-plat AT, sur
   aucune surface — ni MCP, ni CLI, ni bibliothèque, même en développement. Un
@@ -99,22 +99,40 @@ est tenue par le schéma de données : une donnée marquée
 
 ## Relecture
 
-Il n'y a pas de porte de relecture humaine sur le diff. Elle est remplacée par
-une flotte d'agents d'angles différents, ce qui n'est défendable que parce que
-la flotte existe réellement :
+**Un relecteur agent, et une lecture humaine du diff.** Toute *pull request* est
+relue par [CodeRabbit](.coderabbit.yaml), configuré avec les invariants du
+projet, puis le diff est lu à la main avant fusion. L'agent s'ajoute à la
+relecture humaine, il ne la remplace pas.
 
-| Relecteur | Rôle |
-|-----------|------|
-| Gemini Code Review | Relecture générale |
-| CodeRabbit | Relecture générale, [configurée](.coderabbit.yaml) avec les invariants du projet |
-| Claude Code Review | [Relecture ciblée](.github/workflows/claude-review.yml) sur les huit invariants ci-dessus |
-| `cargo-deny` | Licences, avis de sécurité, provenance des sources |
-| `markdownlint-cli2` | Le dossier lui-même |
+S'y ajoutent deux portes automatiques, qui ne relisent pas du code :
+`cargo-deny` (licences, avis de sécurité, provenance des sources — en veille
+jusqu'au premier `Cargo.toml`) et `markdownlint-cli2` sur le dossier lui-même.
 
-Les *pull requests* issues de forks ne sont pas relues par Claude : le
-déclencheur est `pull_request` et non `pull_request_target`, donc le secret
-d'API n'est jamais exposé à du code de fork. Elles restent couvertes par les
-autres relecteurs.
+<details>
+<summary>Pourquoi pas trois relecteurs, comme annoncé un temps</summary>
+
+Le dépôt a brièvement visé une flotte de trois relecteurs agents — Gemini,
+CodeRabbit, Claude — dans le but de supprimer la porte de relecture humaine,
+comme le prévoit le standard dont s'inspire ce projet. Mise à l'épreuve sur la
+première *pull request*, elle n'a pas tenu :
+
+- **Gemini n'avait jamais été installé sur ce dépôt**, seulement sur d'autres.
+  Aucun commentaire, aucune vérification, aucun signal.
+- **`claude-review` a relu deux tours correctement, puis a perdu l'accès à son
+  API.** Coût constaté : de l'ordre de 0,60 $US par tour, plusieurs tours par
+  *pull request*. Le fichier est conservé
+  [désactivé](.github/workflows/claude-review.yml.disabled).
+
+La leçon vaut d'être gardée, parce que les deux pannes ne se ressemblent pas :
+celle de Claude fait rougir une vérification, celle de Gemini ne produit **aucun
+signal du tout**. Un relecteur absent ressemble à un relecteur satisfait — et
+c'est le seul cas contre lequel l'outillage n'offre rien. D'où la règle : un
+relecteur ne compte que s'il est observé sur une vraie *pull request*, pas parce
+qu'un fichier de configuration existe.
+
+Détail complet en [`12` §6.3](docs/12-standards-de-developpement.md).
+
+</details>
 
 ---
 

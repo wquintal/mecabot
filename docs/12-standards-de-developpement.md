@@ -193,22 +193,39 @@ Pour le fichier de journal lui-même, le standard offre trois patrons ; retenir 
 
 Sur un projet personnel sans cette flotte, supprimer la porte de relecture humaine ne laisse **aucune** relecture. C'est le seul endroit de tout punt-kit où reprendre le standard à moitié crée un risque réel, et il faut le nommer : **soit la flotte de relecture est en place, soit la relecture humaine reste la porte.** Pas d'entre-deux.
 
-> ### ✅ Tranché le 2026-08-26 — la flotte existe
+> ### ⚠️ Tranché le 2026-08-26, **renversé le 2026-08-27** — la flotte n'existe pas
 >
-> L'alternative ci-dessus est levée par le premier terme : **la flotte est en place, donc la règle devient adoptable.** Quatre relecteurs d'angles différents, sur un dépôt public :
+> L'alternative ci-dessus se résout par son **second** terme, et non le premier comme il avait été écrit la veille : **il n'y a pas de flotte, donc la relecture humaine reste la porte.** Le montage à trois relecteurs a été construit, mis à l'épreuve sur une vraie *pull request*, et il n'a pas tenu — pour deux raisons différentes, dont une seule était visible.
 >
-> | Relecteur | Angle | Configuration |
+> | Outil | Angle | Configuration | État au 2026-08-27 |
+> |---|---|---|---|
+> | CodeRabbit | Relecture générale de code, plus les invariants du projet | `.coderabbit.yaml`, `path_instructions` par type de fichier | ✅ **le seul relecteur retenu** |
+> | Gemini Code Review | Relecture générale de code | Application GitHub, aucun fichier au dépôt | ⛔ **jamais installé sur ce dépôt** — retiré du périmètre |
+> | Claude Code Review | Relecture de code ciblée sur les huit interdits par construction | `.github/workflows/claude-review.yml.disabled` | ⛔ **désactivé** — coût d'API par relecture |
+> | `cargo-deny` | **Pas un relecteur de code** — licences, avis de sécurité, provenance des sources | `deny.toml` | ⏸️ en veille jusqu'au premier `Cargo.toml` |
+>
+> **La décision retenue : un relecteur agent, et la porte humaine maintenue.** Le motif est le coût, et c'est une décision du propriétaire du dépôt : CodeRabbit est en place et convient ; Gemini demande une installation payante par Google Cloud ; `claude-review` consommait **de l'ordre de 0,60 $US par tour de relecture** sur une *pull request* de documentation, et il en faut plusieurs par *pull request*. Sur un projet personnel de fin de semaine, trois relecteurs généralistes ne se justifient pas économiquement.
+>
+> ⛔ **Conséquence directe, et non négociable :** la règle punt-kit *« There is no human code-review gate »* **n'est pas adoptée**. Elle ne l'a jamais été qu'à la faveur d'une flotte qui n'a existé qu'un jour et sur le papier. `docs/09` §1 est corrigé en conséquence : **tout diff se relit à la main avant fusion**, CodeRabbit venant en plus et non à la place.
+>
+> **Ce qui fait que ce n'est pas un échec du dossier, mais son fonctionnement :** §6.3 avait nommé le piège d'avance — *« soit la flotte de relecture est en place, soit la relecture humaine reste la porte, pas d'entre-deux »*. Le piège s'est présenté exactement comme décrit, et l'avertissement a servi à ce qu'il était écrit pour servir. Le seul défaut réel est d'avoir écrit ✅ le 2026-08-26 sur la foi de l'intention plutôt que d'une mesure.
+>
+> ---
+>
+> ### 💡 Ce qui reste acquis du détour, et vaut plus que le montage lui-même
+>
+> **La colonne « État » ne se déduit pas des fichiers du dépôt.** `.coderabbit.yaml` sans l'application installée, `claude-review.yml` sans clé d'API valide : ce sont des relecteurs qui ne relisent pas. Ces activations vivent **hors** du dépôt, donc elles ne se lisent pas dans un diff — elles se relèvent sur une *pull request* réelle, périodiquement, ou pas du tout.
+>
+> **Les deux pannes ne se ressemblent pas, et l'asymétrie est la leçon :**
+>
+> | Panne | Signal | Danger |
 > |---|---|---|
-> | Gemini Code Review | Relecture générale | Déjà en place avant cette session |
-> | CodeRabbit | Relecture générale, plus les invariants du projet | `.coderabbit.yaml`, `path_instructions` par type de fichier |
-> | Claude Code Review | Ciblé sur les huit interdits par construction | `.github/workflows/claude-review.yml` |
-> | `cargo-deny` | Licences, avis de sécurité, provenance des sources | `deny.toml` |
+> | `claude-review` a perdu l'accès à son API — deux tours réussis, puis échec immédiat en 400 ms, à coût nul et sans appel de modèle | **Bruyant** : vérification rouge sur la *pull request* | Faible — impossible à manquer |
+> | Gemini n'a jamais été installé ici, seulement ailleurs | **Aucun** : pas de commentaire, pas de vérification, rien | **Élevé** — un relecteur absent ressemble à un relecteur satisfait |
 >
-> **Ce qui rend la substitution honnête, et non un habillage :** les trois relecteurs de code sont indépendants — modèles différents, éditeurs différents, points de défaillance différents. Une flotte d'un seul agent n'aurait pas remplacé la porte humaine, elle l'aurait supprimée en la nommant autrement.
+> **Le cas muet est le dangereux**, et c'est le seul contre lequel l'outillage n'offre rien. Un relecteur qu'on croit acquis parce qu'on l'a installé sur d'autres dépôts est un relecteur qu'on n'a pas.
 >
-> ⚠️ **Ce que la flotte ne couvre pas, et qu'il faut savoir :** les *pull requests* issues de forks ne sont pas relues par Claude. Le déclencheur est `pull_request` et non `pull_request_target`, précisément pour que le secret d'API ne soit jamais exposé à du code de fork. Sur un dépôt public, c'est le bon sens de la marche — mais ça veut dire qu'une contribution externe est relue par trois relecteurs au lieu de quatre.
->
-> ⛔ **Corollaire à ne pas retourner.** Cette règle n'est citable que tant que la flotte tourne réellement. Si les trois relecteurs sont désactivés, retirés du dépôt ou laissés en échec silencieux, **la porte humaine redevient obligatoire** — l'ordre logique va de la flotte vers la règle, jamais l'inverse.
+> ⛔ **Et une raison technique de ne pas « mettre en veille » un relecteur derrière une condition** plutôt que de le retirer : sur une *pull request* de fork, `claude-review` n'échouait pas — il était *skipped*, et **un job sauté par un `if:` de niveau job compte comme réussi** dans les vérifications de protection de branche. Un relecteur conditionnel affiche donc vert sur précisément les *pull requests* qu'il n'a pas relues. C'est pourquoi le fichier est renommé en `.disabled` — inerte et visiblement inerte — au lieu d'être gardé derrière un test de présence de secret.
 
 ### 6.4 Deux constats plus favorables
 
@@ -227,17 +244,19 @@ Le constat de séquencement le plus utile du dossier sur ce sujet : **Mecabot es
 | Action | Origine | État |
 |---|---|---|
 | `git init`, branche `main`, protection de branche | `git.md`, `github.md` | ✅ fait le 2026-08-26 |
-| `docs.yml` avec markdownlint-cli2 sur les treize documents | `github.md` — exigé de **tous** les dépôts | ✅ fait |
+| `docs.yml` avec markdownlint-cli2 sur les seize fichiers Markdown suivis | `github.md` — exigé de **tous** les dépôts | ✅ fait |
 | `.markdownlint.jsonc` + `.markdownlint-cli2.jsonc` | `github.md`, gabarits fournis | ✅ fait |
 | Actions épinglées au SHA complet, délais de tâche | `github.md` | ✅ fait, cinq SHA résolus par `gh api` |
 | `CHANGELOG.md` avec une section `[Unreleased]` | `release-requirements.md` | ✅ fait |
 | Secret scanning, push protection, alertes Dependabot | `github.md` | ✅ fait |
 
-> **Ce que le passage au lint a réellement coûté, mesuré plutôt que supposé.** L'avertissement écrit ici était que des documents **en français** en prose longue feraient probablement dérailler quelques règles. Résultat sur les seize fichiers : **554 signalements, dont 534 pour une seule règle cosmétique** (`MD060`, remplissage des barres verticales de tableau), désactivée. Des vingt restants, **aucun ne portait sur la langue ou la longueur des lignes** — c'étaient de vrais petits défauts de structure : cinq blocs de code sans langage, deux sauts de niveau de titre, une cellule de tableau manquante, une liste sans ligne vide, une ponctuation en fin de titre.
+> **Ce que le passage au lint a réellement coûté, mesuré plutôt que supposé.** L'avertissement écrit ici était que des documents **en français** en prose longue feraient probablement dérailler quelques règles. Résultat sur les seize fichiers : **554 signalements, dont 534 pour une seule règle cosmétique** (`MD060`, remplissage des barres verticales de tableau), désactivée. Des vingt restants, **aucun ne portait sur la langue** — c'étaient de vrais petits défauts de structure : cinq blocs de code sans langage, deux sauts de niveau de titre, une cellule de tableau manquante, une liste sans ligne vide, une ponctuation en fin de titre.
 >
 > **La leçon inverse de celle attendue :** le lint n'a pas puni le français, il a trouvé une ligne de tableau qui perdait sa donnée (`06` §1) — un défaut qu'aucune relecture humaine n'avait attrapé en une semaine. Les onze occurrences de `forscan.org` signalées n'étaient pas des fautes de casse mais des noms de domaine sans mise en forme ; les mettre entre chevrons inverses est la correction juste, et garde la règle capable d'attraper un vrai `forscan` en minuscules écrit à la place de « FORScan » dans la prose.
 >
-> ⚠️ **Une seule règle a été désactivée pour convenance**, `MD060`, et le motif est écrit dans `.markdownlint.jsonc` : elle déduit un style de la première ligne de séparation rencontrée puis l'exige partout, pour un rendu GitHub identique. `MD056` (nombre de colonnes), qui attrape de vrais défauts, reste active.
+> ⚠️ **Trois règles sont désactivées, et il faut les distinguer.** `MD013` (longueur de ligne) et `MD036` (emphase en guise de titre) l'étaient **avant la mesure**, comme choix de rédaction posés d'avance : prose non rewrappée, intertitres légers en gras. `MD060` est la seule désactivée **en réaction** au résultat, et son motif est écrit dans `.markdownlint.jsonc` : elle déduit un style de la première ligne de séparation rencontrée puis l'exige partout, pour un rendu GitHub identique. `MD056` (nombre de colonnes), qui attrape de vrais défauts, reste active.
+>
+> ⛔ **Ce que la mesure ne dit donc pas.** `MD013` étant désactivée avant le comptage, l'absence de signalement de longueur de ligne n'est pas un résultat — c'est une conséquence de la configuration. L'hypothèse « le lint va punir la prose française longue » n'est infirmée que sur sa moitié mesurée : la **langue**. Sur la longueur des lignes, elle n'a jamais été mise à l'épreuve.
 
 ---
 
@@ -267,8 +286,8 @@ Quelques règles générales de ce standard méritent malgré tout d'être reten
 | Emplacement des données d'exécution | **Répertoires natifs de la plateforme sous le nom `mecabot`** — pas `~/.punt-labs/` | `09` §7 |
 | Mode d'emploi de punt-kit | **Emprunt sélectif et cité, révision épinglée** — pas d'adoption, pas de contribution amont par défaut | §1 de ce document |
 | Visibilité du dépôt | **Public, tel quel** — `wquintal/mecabot`, dossier compris | §9.1 ci-dessous |
-| Relecture du diff | **Flotte de quatre relecteurs, pas de porte humaine** — Gemini, CodeRabbit, Claude, `cargo-deny` | §6.3, encadré du 2026-08-26 |
-| Application de la règle « aucune dépendance GPL » | **Liste d'autorisation en CI**, la GPL exclue par omission | `deny.toml`, `rust.yml` tâche `deny` |
+| Relecture du diff | **Un relecteur agent — CodeRabbit — et la porte humaine maintenue.** La règle punt-kit « pas de porte humaine » n'est pas adoptée : le montage à trois relecteurs a été mesuré le 2026-08-27 et n'a pas tenu | §6.3, encadrés du 2026-08-26 et du 2026-08-27 |
+| Application de la règle « aucune dépendance GPL » | **Liste d'autorisation en CI**, la GPL exclue par omission — porte **écrite, pas encore exercée** tant qu'il n'y a pas de `Cargo.toml` | `deny.toml`, `rust.yml` tâche `deny` |
 
 ### 9.1 La publication, et la déclaration qu'elle emporte
 
@@ -278,11 +297,13 @@ La décision est celle du propriétaire du dépôt, elle est prise, et ce docume
 
 ### 9.2 Une dérogation assumée à `github.md`
 
-⚠️ Le standard exige *« Every repository must enable GitHub Copilot as a code reviewer »*. **Mecabot ne l'active pas.** La flotte retenue est Gemini + CodeRabbit + Claude.
+⚠️ Le standard exige *« Every repository must enable GitHub Copilot as a code reviewer »*. **Mecabot ne l'active pas.** Le relecteur agent retenu est **CodeRabbit**, seul.
 
-**Pourquoi la dérogation est tenable :** la fonction que le standard visait — *« Review of code is agent-owned end to end »*, aucun diff fusionné sans relecture par un agent — est remplie, et par trois relecteurs indépendants plutôt qu'un. Le standard nomme un outil ; c'est la propriété qui compte, et elle est satisfaite plus largement que le minimum exigé.
+**Pourquoi la dérogation est tenable :** la fonction visée par le standard — aucun diff fusionné sans relecture par un agent — est remplie. Le standard nomme un outil ; c'est la propriété qui compte.
 
-**Comment elle est contenue :** la dérogation porte sur l'identité des relecteurs, pas sur l'existence de la porte. Le nombre plancher est de trois relecteurs de code indépendants — en descendre en dessous rouvre §6.3.
+⚠️ **En revanche la deuxième moitié du standard n'est pas suivie**, et il faut le dire nettement plutôt que le glisser : *« Review of code is agent-owned end to end »* supposait que l'agent **remplace** l'humain. Ici l'agent **s'ajoute** à lui. Mecabot est donc plus conservateur que `github.md`, pas plus permissif — la dérogation va dans le sens de la prudence, ce qui est le seul sens dans lequel elle se défend sans flotte.
+
+**Comment elle est contenue :** le plancher est d'**un relecteur agent observé sur la *pull request*, plus une lecture humaine du diff**. Si CodeRabbit tombe à son tour, il ne reste que la lecture humaine — ce qui est le régime normal d'un projet personnel, et non une dégradation à rattraper.
 
 ---
 
@@ -292,4 +313,4 @@ La décision est celle du propriétaire du dépôt, elle est prise, et ce docume
 - **La liste exacte des sous-commandes CLI.** §3.2 impose la couverture complète et les cinq verbes d'administration ; le découpage se fait en écrivant le CLI.
 - **Le contenu du `Makefile`.** `make check` est adopté comme porte ; ce qu'il exécute dépend de l'outillage Rust retenu (`cargo fmt --check`, `clippy -D warnings`, `test`), à figer à l'étape 1.
 - **La licence.** Toujours non décidée (`09` §1). Rien dans punt-kit ne la contraint ; la règle « aucune dépendance GPL » reste la seule en vigueur.
-- ~~**La relecture.**~~ ✅ **Tranché le 2026-08-26** : la flotte est en place, la porte humaine tombe (§6.3). Ce qui reste ouvert est plus étroit — au bout de quelques *pull requests* réelles, savoir si trois relecteurs généralistes produisent assez de signal utile ou surtout du bruit. Ça ne s'évalue pas à l'avance.
+- ~~**La relecture.**~~ ✅ **Tranché, en deux temps.** Le 2026-08-26 sur le principe — une flotte d'agents remplace la porte humaine ; le 2026-08-27 sur les faits — **la flotte est CodeRabbit seul et la porte humaine est maintenue** (§6.3). Ce qui reste ouvert est plus étroit : au bout de quelques *pull requests* réelles, savoir si un relecteur généraliste produit assez de signal utile pour valoir son bruit. Le premier tour en a produit — deux contradictions réelles dans le dossier, dont un décompte faux, plus un défaut de tableau invisible depuis une semaine.

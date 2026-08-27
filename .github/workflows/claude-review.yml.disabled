@@ -1,15 +1,31 @@
 name: claude-review
 
-# Troisième relecteur de la flotte, à côté de Gemini Code Review et CodeRabbit.
-# Trois relecteurs d'angles différents sont ce qui rend adoptable la règle
-# « la relecture du diff appartient aux agents » de `docs/12` §6.3 — cette règle
-# n'est sûre que si la flotte existe réellement.
+# ⛔ DÉSACTIVÉ le 2026-08-27. L'extension `.disabled` fait que GitHub Actions
+# ignore ce fichier : seuls les `.yml` / `.yaml` de `.github/workflows/` sont
+# chargés. Le fichier est conservé, pas supprimé, parce que sa configuration a
+# coûté trois échecs à trouver (voir la note « ce qui a été appris » plus bas).
+#
+# Motif de la désactivation : le coût. Une relecture consommait de l'ordre de
+# 0,60 $US par tour d'API, et il en faut plusieurs par pull request. La flotte
+# de relecture est ramenée à **CodeRabbit seul**, et la porte de relecture
+# humaine sur le diff est **maintenue** — c'est-à-dire que la règle punt-kit
+# « There is no human code-review gate » n'est PAS adoptée. Voir `docs/12` §6.3.
+#
+# ⛔ Pourquoi renommé plutôt que gardé derrière une condition : un job sauté par
+# un `if:` de niveau job compte comme **réussi** dans les vérifications de
+# protection de branche. Un relecteur conditionnel afficherait donc vert sur
+# précisément les pull requests qu'il n'a pas relues. Inerte et visiblement
+# inerte vaut mieux que dormant.
+#
+# Pour le réactiver : renommer en `claude-review.yml`, et vérifier que le secret
+# `ANTHROPIC_API_KEY` est valide et approvisionné. Le contenu ci-dessous est
+# fonctionnel en l'état — il a publié deux relectures sur la PR #1 avant que la
+# clé cesse de répondre.
 #
 # ⚠️ Sûreté sur un dépôt public : le déclencheur est `pull_request` et **non**
 # `pull_request_target`. Les PR issues de forks n'ont donc pas accès au secret
 # `ANTHROPIC_API_KEY` et ne sont pas relues par Claude. C'est volontaire :
 # `pull_request_target` exécuterait du code de fork avec accès au secret.
-# Les PR de forks restent couvertes par Gemini, CodeRabbit et la CI.
 
 on:
   pull_request:
@@ -41,7 +57,32 @@ jobs:
         uses: anthropics/claude-code-action@1f291e1cfe0f5fc21db2aef19af844591600ade7 # v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          use_sticky_comment: 'true'
+          # Par défaut, l'action demande un jeton OIDC puis l'échange contre un
+          # jeton d'**application** Claude Code, ce qui exige d'installer
+          # `github.com/apps/claude` sur le dépôt. Constaté sur la PR #1 :
+          # « Claude Code is not installed on this repository ».
+          #
+          # Fournir explicitement le jeton du workflow court-circuite cet
+          # échange. Une dépendance de moins, et les permissions restent celles
+          # déclarées ci-dessus — l'application, elle, aurait apporté sa propre
+          # portée. Contrepartie assumée : les commentaires apparaissent sous
+          # `github-actions[bot]` plutôt que sous une identité Claude.
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+
+          # ⚠️ Sans ces deux réglages, l'action **relit sans rien publier**.
+          # Constaté sur la PR #1 : session réussie, treize tours, 0,61 $, deux
+          # refus de permission, et aucun commentaire — un relecteur qui coûte
+          # sans relire, c'est-à-dire exactement le mode de défaillance
+          # silencieuse décrit en `docs/12` §6.3.
+          #
+          # `track_progress` force le mode à commentaire de suivi et fournit à
+          # Claude le contexte de la *pull request*. `--allowedTools` lui donne
+          # les outils de publication : sans autorisation explicite, l'appel est
+          # refusé. Patron repris de `examples/pr-review-comprehensive.yml` du
+          # dépôt de l'action.
+          track_progress: 'true'
+          claude_args: |
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*)"
           prompt: |
             Relis cette pull request. Réponds en français.
 

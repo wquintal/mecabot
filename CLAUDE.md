@@ -121,15 +121,24 @@ commuté) impose un fusible près de la source.
   Ne pas inventer un SHA : le résoudre avec `gh api`.
 - **GitHub Actions ne supporte pas les ancres YAML.** Dupliquer plutôt
   qu'ancrer.
-- **Il n'y a pas de porte de relecture humaine sur le diff** — elle est remplacée
-  par la flotte d'agents (Gemini, CodeRabbit, Claude, cargo-deny). Cette règle
-  n'est adoptable **que** parce que la flotte existe ; ne pas la citer pour
-  contourner une objection.
+- ⛔ **La règle punt-kit « pas de porte de relecture humaine » n'est PAS adoptée.**
+  Elle supposait une flotte de trois relecteurs agents ; la mesure du 2026-08-27
+  l'a renversée. **La flotte est CodeRabbit seul**, et **tout diff se relit à la
+  main avant fusion** — CodeRabbit vient en plus, pas à la place. Ne pas citer
+  cette règle punt-kit pour se passer d'une relecture (`docs/12` §6.3).
+- **Un relecteur ne compte que s'il est observé sur une vraie *pull request*.**
+  Un fichier de configuration au dépôt ne prouve rien : l'activation vit hors du
+  dépôt. Gemini était tenu pour acquis parce qu'il est installé sur d'autres
+  dépôts — il n'a jamais rien relu ici, et **rien ne l'a signalé**. Un relecteur
+  absent ressemble à un relecteur satisfait ; c'est le mode de défaillance à
+  surveiller.
+- `cargo-deny` est une **porte de dépendances**, pas un relecteur de code, et
+  dort derrière la tâche `guard` jusqu'au premier `Cargo.toml`.
 
 ## Dérogation assumée
 
 Le standard `github.md` de punt-kit exige GitHub Copilot comme relecteur requis.
-**Mecabot ne l'utilise pas** : la flotte est Gemini + CodeRabbit + Claude, choix
-de l'utilisateur. Trois relecteurs d'angles différents remplissent la fonction
-que le standard visait — qu'aucun diff ne fusionne sans relecture par un agent.
-Consigné dans `docs/12`.
+**Mecabot ne l'utilise pas** : le relecteur agent est **CodeRabbit**, choix de
+l'utilisateur. La fonction que le standard visait — qu'aucun diff ne fusionne
+sans relecture par un agent — est remplie, et la porte humaine est **conservée**
+par-dessus au lieu d'être supprimée. Consigné dans `docs/12` §6.3 et §9.2.
