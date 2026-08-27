@@ -123,12 +123,14 @@ relue par deux relecteurs au lieu de trois, et c'est le cas où la porte humaine
 **n'est pas** levée : le diff se lit avant fusion.
 
 ⚠️ **Le compte n'est pas tenu aujourd'hui.** Au 2026-08-27, Gemini n'a laissé
-aucune trace sur la première *pull request* de ce dépôt — deux relecteurs
-répondent, pas trois. Tant que c'est le cas, la relecture humaine du diff reste
-requise, y compris sur une branche interne (`12` §6.3). C'est cité ici plutôt
-que corrigé en silence parce que c'est précisément le mode de défaillance que ce
-montage doit surveiller : rien, dans l'outillage, ne signale un relecteur
-absent.
+aucune trace sur la première *pull request* de ce dépôt, et `claude-review` est
+tombé sur sa clé d'API après deux tours réussis. **Un** relecteur répond, pas
+trois. Tant que c'est le cas, la relecture humaine du diff est requise, y
+compris sur une branche interne (`12` §6.3). C'est écrit ici plutôt que corrigé
+en silence parce que c'est exactement le mode de défaillance que ce montage doit
+surveiller — et parce que les deux pannes ne se ressemblent pas : celle de
+Claude fait rougir une vérification, celle de Gemini ne produit aucun signal du
+tout.
 
 ---
 
