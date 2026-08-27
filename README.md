@@ -109,7 +109,7 @@ la flotte existe réellement :
 |-----------|------|
 | Gemini Code Review | Relecture générale |
 | CodeRabbit | Relecture générale, [configurée](.coderabbit.yaml) avec les invariants du projet |
-| Claude Code Review | [Relecture ciblée](.github/workflows/claude-review.yml) sur les huit invariants ci-dessus |
+| Claude Code Review | [Relecture ciblée](.github/workflows/claude-review.yml) sur les invariants ci-dessus, plus l'exigence d'erreurs nommées et distinctes |
 
 Plus deux portes automatiques, qui ne relisent pas du code et ne comptent donc
 pas dans ce total : `cargo-deny` (licences, avis de sécurité, provenance des

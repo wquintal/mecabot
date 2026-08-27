@@ -21,8 +21,9 @@ contient le dossier, aucun code applicatif n'existe. La section
   connaissance véhicule sur cinq couches, standards de développement.
 - Chaîne d'intégration continue : `docs.yml` (markdownlint-cli2, exigé de tout
   dépôt par le standard `github.md` de punt-kit) et `rust.yml` (fmt, clippy,
-  test, cargo-deny), ce dernier en veille par filtres `paths` jusqu'au premier
-  commit de code.
+  test, cargo-deny), ce dernier mis en veille par une tâche `guard` qui teste la
+  présence de `Cargo.toml`. Les filtres `paths` seuls n'y suffisaient pas :
+  `deny.toml` et `rust.yml` y figurent, donc le commit initial l'a déclenché.
 - `deny.toml` — liste d'autorisation de licences qui applique en CI la règle
   « aucune dépendance GPL » de `docs/09` §1, et interdictions ciblées sur
   `ecu-diagnostics` (GPL-3.0) et `socketcan` (Linux uniquement).

@@ -215,6 +215,8 @@ Sur un projet personnel sans cette flotte, supprimer la porte de relecture humai
 > ⛔ **Corollaire à ne pas retourner.** Cette règle n'est citable que tant que la flotte tourne réellement. Si les relecteurs sont désactivés, retirés du dépôt ou laissés en échec silencieux, **la porte humaine redevient obligatoire** — l'ordre logique va de la flotte vers la règle, jamais l'inverse. **Le plancher est de trois relecteurs de code indépendants sur une *pull request* interne**, ce qui est exactement l'état actuel : il n'y a aucune marge.
 >
 > **L'échec silencieux est le mode de défaillance à surveiller**, plus que la désactivation volontaire. Une clé d'API expirée, un quota dépassé, une application désinstallée par accident : la *pull request* fusionne, la vérification obligatoire `docs` est verte, et personne n'a relu. Rien dans l'outillage ne signale l'absence d'un relecteur — c'est une lacune connue de ce montage, pas un oubli de rédaction.
+>
+> ⛔ **Un cas de cet échec silencieux est déjà acquis, pas hypothétique : l'exclusion des forks.** Sur une *pull request* de fork, le job `claude-review` n'échoue pas — il est *skipped*, et **un job sauté par un `if:` de niveau job compte comme réussi** dans les vérifications de protection de branche. Le jour où `claude-review` deviendrait une vérification obligatoire, la protection afficherait donc vert sur précisément les *pull requests* que Claude n'a pas relues. C'est le seul mode de défaillance du montage qui soit déjà constitué plutôt que redouté ; il ne se corrige pas en rendant la vérification obligatoire, mais en sachant qu'une contribution externe se lit à deux relecteurs.
 
 ### 6.4 Deux constats plus favorables
 
@@ -233,7 +235,7 @@ Le constat de séquencement le plus utile du dossier sur ce sujet : **Mecabot es
 | Action | Origine | État |
 |---|---|---|
 | `git init`, branche `main`, protection de branche | `git.md`, `github.md` | ✅ fait le 2026-08-26 |
-| `docs.yml` avec markdownlint-cli2 sur les treize documents | `github.md` — exigé de **tous** les dépôts | ✅ fait |
+| `docs.yml` avec markdownlint-cli2 sur les seize fichiers Markdown suivis | `github.md` — exigé de **tous** les dépôts | ✅ fait |
 | `.markdownlint.jsonc` + `.markdownlint-cli2.jsonc` | `github.md`, gabarits fournis | ✅ fait |
 | Actions épinglées au SHA complet, délais de tâche | `github.md` | ✅ fait, cinq SHA résolus par `gh api` |
 | `CHANGELOG.md` avec une section `[Unreleased]` | `release-requirements.md` | ✅ fait |
