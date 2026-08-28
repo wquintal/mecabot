@@ -89,6 +89,21 @@ Ce qui reste à écrire est donc beaucoup plus modeste que dans le cas général
 
 ⚠️ [NON VÉRIFIÉ] : jusqu'à quelle taille de réponse le STN2120 assemble correctement, et son comportement exact sur les réponses très longues. À caractériser tôt.
 
+> ### ⚠️ Précisé le 2026-08-28 — la délégation d'ISO-TP est **conditionnelle**
+>
+> *« Tu envoies `2201A0` et tu récupères la réponse assemblée »* reste vrai, mais **pas dans la configuration de sortie d'usine de l'adaptateur**. Le manuel du fabricant (*OBDLink Family Reference and Programming Manual*, rév. F, 2025-08-29) donne quatre défauts qui mordent, tous `[VÉRIFIÉ]` :
+>
+> | Condition | Défaut d'usine | Sans elle |
+> |---|---|---|
+> | Un préréglage **ISO 15765** (`33`/`34`/`53`/`54`) | selon `ATSP` | Les préréglages `51`/`52` sont de l'**ISO 11898 brut** : rien n'est réassemblé tant que `STCSEGR 1` n'est pas posé |
+> | `ATCAF1` — formatage automatique CAN | ✅ actif | Pas de génération de PCI, pas de retrait des PCI en réponse |
+> | `ATAL` — messages longs autorisés | ⛔ **`ATNL`** | La limite J1979 de **7 octets de données est appliquée en réception** : une réponse UDS longue est refusée avant d'être réassemblée |
+> | Paires de contrôle de flux cohérentes | automatiques, `TxID = RxID − 8` | Un module dont l'identifiant ne suit pas la convention ne reçoit **jamais** sa trame de contrôle de flux → `FC RX TIMEOUT`. Et ⚠️ **ajouter une paire par `STCFCPA` coupe l'automatisme pour toutes les autres** |
+>
+> **Conséquence sur la machine à états d'adaptateur de `10` §1 :** ces quatre réglages sont de l'**état à tenir**, pas une initialisation qu'on pose et qu'on oublie. Un choix de préréglage décide si la couche ISO-TP existe.
+>
+> La borne de réassemblage, elle, est **partiellement publiée** : `[VÉRIFIÉ]` **4 ko de taille de message** pour l'OBDLink EX, ce qui recoupe le plafond de **4095 octets** du champ de longueur sur 12 bits de l'ISO 15765-2 classique. Ce que le manuel ne dit pas, c'est le comportement **à** la borne — erreur nommée (`OUT OF MEMORY`, `BUFFER FULL`) ou troncature silencieuse. ⚠️ **La troncature silencieuse serait le pire cas**, parce qu'une réponse tronquée décode en valeurs plausibles et fausses. Mesuré au bloc C de `13`.
+
 ### Bibliothèques Rust visées
 
 | Besoin | Crate | Maturité |

@@ -5,7 +5,7 @@
 Un serveur MCP de diagnostic automobile **OBD-II / UDS générique, en lecture
 seule**, en Rust, multiplateforme.
 
-**État : préconception.** `docs/` contient treize documents de préconception en
+**État : préconception.** `docs/` contient quatorze documents de préconception en
 français. **Aucun code applicatif n'existe encore, et il ne s'en écrit pas sans
 demande explicite.** Configurer le dépôt et la CI est autorisé ; écrire
 l'application ne l'est pas tant que ce n'est pas demandé.
@@ -18,7 +18,7 @@ identifiants et les messages de commit, quand ils viendront, seront en anglais.
 
 ## Où lire quoi
 
-Ne pas relire les treize documents pour une question ponctuelle. Chacun a un
+Ne pas relire les quatorze documents pour une question ponctuelle. Chacun a un
 rôle :
 
 | Doc | Autorité sur |
@@ -29,6 +29,7 @@ rôle :
 | `docs/11-modele-de-connaissance-vehicule.md` | Les cinq couches de connaissance véhicule, `provenance`, `validation_method` |
 | `docs/12-standards-de-developpement.md` | Ce qui est emprunté à punt-kit et ce qui ne se transpose pas |
 | `docs/07-verifications-a-faire.md` | La liste ouverte de ce qui reste à confirmer sur un vrai véhicule |
+| `docs/13-protocole-seance-terminal.md` | **La séance au terminal série (item 4bis)** : commandes AT/ST, format de trace, anonymisation. ⛔ Ce n'est pas la spec d'un passe-plat — c'est une séance humaine, hors du serveur |
 | `docs/08-architecture-forscan-bridge.md` | ⚠️ **Direction écartée**, conservée pour la trace. Ne pas s'en servir comme référence |
 
 **`docs/09` §1 est la table des décisions verrouillées.** Une décision qui y

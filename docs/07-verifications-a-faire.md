@@ -114,6 +114,24 @@ Les items 1 à 4 sont gratuits et prennent moins d'une heure au total. Ils devra
 
 **Méthode :** un terminal série sur `/dev/tty.usbmodem*`, à la main, avant d'écrire une ligne de Rust. Quelques commandes AT/ST et quelques requêtes.
 
+> ### 📋 **Le protocole détaillé est en `13`, écrit le 2026-08-28 — et la séance a rétréci**
+>
+> **`13-protocole-seance-terminal.md` porte désormais l'exécution de cet item** : les commandes dans l'ordre, en huit blocs, la fiche de relevé à vingt-six lignes, le format de trace que le rejeu de `10` §9 consommera, et la procédure d'anonymisation obligatoire. Cette section-ci reste l'**énoncé** de l'item ; `13` est ce qu'on tient à la main devant le camion.
+>
+> **Ce que la recherche documentaire a levé sans le véhicule**, sur le manuel du fabricant (*OBDLink Family Reference and Programming Manual*, rév. F, 2025-08-29 — source primaire) :
+>
+> - `[VÉRIFIÉ]` **La commutation MS-CAN est `STP 53`**, un changement de préréglage de protocole. ⛔ Il n'y a **pas** de relais et **pas** de commande `ATSW`/`ATMSCAN` — `05` §3.1 est faux sur ce point. Un seul périphérique CAN, remappé par logiciel, **un seul bus à la fois**.
+> - `[VÉRIFIÉ]` **`ATST` est déprécié**, remplacé par `STPTO ms`, défaut **102 ms**.
+> - `[VÉRIFIÉ]` **115200 bps, 8N1** sur les OBDLink USB ; jusqu'à 2 Mbps avec `ATE0`.
+> - `[VÉRIFIÉ]` **Taille de message de 4 ko** pour l'EX, ce qui recoupe le plafond de 4095 octets de l'ISO 15765-2 classique.
+> - `[VÉRIFIÉ]` **Le format des lignes de réponse est documenté et exemplifié** — longueur en hexadécimal sur sa propre ligne, puis `n:` par trame, sous `ATCAF1`.
+> - `[VÉRIFIÉ]` **Quatre réglages par défaut mordent** : `ATNL` limite la réception à 7 octets, `STCSEGR` est à 0, les paires de contrôle de flux supposent `RxID − 8`, et une paire manuelle coupe l'automatisme pour toutes les autres.
+> - ⚠️ **L'OBDLink EX est probablement un STN2232, pas un STN2120** — le dossier écrit STN2120 partout. `STI` tranche en une commande.
+>
+> **Il reste trois mesures que le manuel ne peut pas donner**, et ce sont les vraies : **le délai de commutation de bus**, **à quelle attente la session UDS tombe et ce que la chute produit**, et **le débit réel en requêtes par seconde**.
+>
+> ---
+>
 > ### ⚠️ **Journalise la séance — c'est le point ajouté le 2026-08-25, et il change la valeur de l'item**
 >
 > Cet item ne sert pas seulement à répondre aux six questions du tableau ci-dessous. **Le journal de la séance devient le premier jeu de test du projet** : `10` §9 établit qu'un troisième `Transport` de rejeu permet de développer la machine à états et le décodeur contre ce que le véhicule a *réellement* répondu, sans avoir le camion sous la main.

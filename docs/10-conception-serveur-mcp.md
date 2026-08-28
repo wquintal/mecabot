@@ -43,6 +43,14 @@ Le problème n'est pas théorique : l'agent oubliera de fermer. Il n'y a aucune 
 
 ⚠️ [NON VÉRIFIÉ] Le délai réel de commutation et la nécessité de réinitialiser sont l'item 4bis de `07`. Cette section est un plan qui suppose des chiffres non mesurés.
 
+> ### ✅ Partiellement levé le 2026-08-28 — la **nécessité** de réinitialiser n'est plus une hypothèse
+>
+> `[VÉRIFIÉ]` sur le manuel du fabricant (*OBDLink Family Reference and Programming Manual*, rév. F, 2025-08-29, §8.6) : l'adaptateur n'a **qu'un seul périphérique CAN**, mappé sur différentes broches **par logiciel**, donc **un seul bus actif à la fois**. La commutation est un changement de préréglage — `STP 33` pour HS-CAN, **`STP 53` pour le MS-CAN Ford**. Le périphérique étant **remappé**, une session UDS ouverte sur l'autre bus est perdue **par construction** : le *« probablement »* ci-dessus tombe.
+>
+> **Ce qui reste `[NON VÉRIFIÉ]`, et c'est le chiffre qui décide de tout :** le **délai**. Aucune documentation ne le publie. S'il est de 50 ms, la règle d'ordonnancement par bus ci-dessus est un confort ; s'il est de 2 s, elle est structurante. Mesuré au bloc D de `13`, trois fois dans chaque sens.
+>
+> ⚠️ **Et il y a un second chien de garde, indépendant du chronomètre `$3E`.** L'adaptateur a sa propre fonction de basse consommation, qui s'annonce par `ACT ALERT` (une minute) puis `LP ALERT` (deux secondes), avec un délai d'inactivité UART par défaut de 1200 s. `STSLCS` en imprime toute la configuration en une commande. Deux minuteurs à des échelles différentes, à ne pas confondre dans la conception — surtout pour le rôle enregistreur de `09` §11, qui tourne des heures.
+
 ---
 
 ## 2. Concurrence : le port série est une ressource exclusive
@@ -107,6 +115,26 @@ C'est la section la plus sous-estimée d'une conception de serveur MCP. Si tous 
 | Valeur lue mais **invariante** | ⚠️ **Non validée**, quelle que soit la cause. Cinquième méthode de validation, `09` §4 et §6.2. |
 | **Refus par une passerelle sécurisée** | ⚠️ **Ajouté le 2026-08-25.** Condition distincte de `7F .. 33` — ce n'est pas le même niveau du réseau, et l'agent ne doit pas en conclure la même chose. Le palier 1 devrait rester accessible ; le palier 3 probablement pas. Aucun contournement n'existe pour ce projet (`11` §6.1). |
 | **Aucun profil ne correspond au véhicule** | ⚠️ **Ajouté le 2026-08-25.** N'est **pas** une erreur : **palier 1 seulement, et le dire.** ⛔ **Jamais « appliquer le profil le plus proche »** — ça produirait des grandeurs plausibles et fausses, le pire mode de défaillance du dossier (`11` §10). |
+
+### ⚠️ Il manque un étage — ajouté le 2026-08-28
+
+Le tableau ci-dessus est construit sur les conditions **véhicule** et **UDS**. Or l'adaptateur a **sa propre couche d'erreurs**, avec un catalogue fermé de chaînes documentées (*OBDLink Family Reference and Programming Manual*, rév. F, 2025-08-29, §9.0), et l'action humaine n'y est pas la même. Les confondre avec les `7F` d'UDS fait raisonner faux — exactement ce que cette section combat.
+
+| Chaîne de l'adaptateur | Ce que l'agent doit conclure |
+|---|---|
+| `NO DATA` | ⛔ **Jamais « module absent ».** Le manuel donne **quatre** causes : requête non supportée, requête bloquée par un filtre, **timeout `STPTO` trop court**, protocole non supporté. La troisième est celle qu'on se cause soi-même |
+| `CAN ERROR` | **Signature du mauvais bus** ou du mauvais débit. Attendue si on interroge un module MS-CAN sans avoir commuté (§1) |
+| `FC RX TIMEOUT` | Trame de contrôle de flux non reçue : bus chargé, trame filtrée, **ou paire d'adresses absente**. Les paires automatiques supposent `TxID = RxID − 8`, ce qui ne vaut pas pour tous les modules de carrosserie |
+| `UNABLE TO CONNECT` | **Contact coupé**, pas d'alimentation au connecteur, ou câblage. Vérifier le contact **avant** de soupçonner le logiciel |
+| `BUS BUSY`, `BUS ERROR`, `FB ERROR` | Câblage, ou **un second outil qui émet en parallèle** |
+| `BUFFER FULL`, `OUT OF MEMORY` | Bornes de tampon atteintes. Actionnable : débit UART, `ATH0`/`ATS0`, filtres |
+| `STOPPED` | ⚠️ **Un caractère reçu sur l'UART a interrompu une commande en cours.** C'est la **preuve matérielle** de l'exclusivité de §2 : deux écrivains ne produisent pas une erreur propre |
+| `LV RESET` | ⚠️ **Réinitialisation par sous-tension** — la puce redémarre et **perd tout son état**. C'est la **preuve matérielle** de la précondition « mainteneur de batterie branché » de `probe_dids` (§7). Un balayage de 40 minutes contact mis, moteur arrêté, sans mainteneur, finit là |
+| `ACT ALERT`, `LP ALERT` | Basse consommation imminente. **Second chien de garde**, indépendant de `$3E` — voir §1 |
+| `<DATA ERROR`, `<RX ERROR` | Échec d'intégrité : connecteur oxydé, bruit, **ou mauvais débit** |
+| `?` | Syntaxe invalide **ou commande inappropriée au contexte**. ⚠️ Ne dit pas laquelle des deux |
+
+**Trois de ces chaînes valident des invariants que le dossier posait par prudence** — `STOPPED` pour le propriétaire unique du port, `LV RESET` pour le mainteneur de batterie, `CAN ERROR` pour la commutation de bus. Ce n'étaient pas des précautions de principe : ce sont des mécanismes nommés dans le manuel du fabricant.
 
 ### La règle qui compte le plus
 
