@@ -22,7 +22,7 @@ contient le dossier, aucun code applicatif n'existe. La section
   de la séance au terminal série.
 - `docs/13-protocole-seance-terminal.md` — l'exécution de l'item 4bis de
   `docs/07`, le seul préalable réel à l'écriture de code : huit blocs de
-  commandes AT/ST dans l'ordre, fiche de relevé de vingt-six mesures, format de
+  commandes AT/ST dans l'ordre, fiche de relevé de vingt-sept mesures, format de
   trace horodatée que consommera le transport de rejeu de `docs/10` §9, et
   procédure d'anonymisation obligatoire avant tout versement — une trace
   contient le VIN dès le premier contact, `$22 F190` étant la meilleure sonde
@@ -76,6 +76,27 @@ contient le dossier, aucun code applicatif n'existe. La section
 - `docs/07` §4bis : les consignes résiduelles renvoyant à `ATST` passent à
   `STPTO`, et la commutation MS-CAN n'est plus listée comme inconnue — seul son
   délai l'est.
+- `docs/13` §3.3 — **la procédure de capture sur macOS**, qui rend la séance
+  exécutable : `tio` 3.9 (`--timestamp-format 24hour-start` donne directement le
+  champ `t` relatif de §3.2), le mappage `INLCR` **sans lequel l'adaptateur ne
+  répond à rien**, `--input-mode line` comme **dispositif de sûreté** — une ligne
+  se relit avant de partir, au lieu que chaque frappe soit émise aussitôt — et
+  `/dev/cu.*` plutôt que `/dev/tty.*`, qui bloque sur la porteuse. L'ancien §3.3
+  devient §3.4.
+- 🐛 **`docs/13` blocs A0 et A : `ATE0` retiré.** Écho coupé, l'adaptateur ne
+  renvoie plus les commandes reçues, donc une capture passive ne contient que le
+  sens `rx` et **les lignes `tx` de §3.2 deviennent impossibles**. `ATE0` est un
+  réglage de *pilote* qui avait fui dans le protocole de *séance* ; il reste à
+  essayer délibérément au bloc G pour mesurer ce que l'écho coûte. L'écho de
+  l'adaptateur est aussi préférable au `--local-echo` du terminal : il prouve ce
+  que l'adaptateur a **reçu**, pas ce que le terminal a envoyé.
+- ⛔ **`docs/13` §3.3 nomme un danger qui n'était écrit nulle part :** une note
+  tapée à l'invite de l'adaptateur n'est pas ignorée — une ligne qui ne commence
+  pas par `AT` ou `ST` est interprétée comme des **octets hexadécimaux à émettre
+  sur le bus**. Les notes vont dans un fichier séparé.
+- `docs/13` §5 : la fiche passe à **vingt-sept** mesures — la vingt-septième est
+  la seule qui ne demande ni véhicule ni J1962 (le journal porte-t-il `0d` ou
+  `0a` en fin de ligne, `xxd` au bureau).
 - `docs/10` §1 : la **nécessité** de réinitialiser après une commutation de bus
   n'est plus une hypothèse mais une conséquence de l'architecture de la puce ;
   seul le **délai** reste à mesurer. §4 gagne l'**étage adaptateur** de la

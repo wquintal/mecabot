@@ -116,7 +116,7 @@ Les items 1 à 4 sont gratuits et prennent moins d'une heure au total. Ils devra
 
 > ### 📋 **Le protocole détaillé est en `13`, écrit le 2026-08-28 — et la séance a rétréci**
 >
-> **`13-protocole-seance-terminal.md` porte désormais l'exécution de cet item** : les commandes dans l'ordre, en huit blocs, la fiche de relevé à vingt-six lignes, le format de trace que le rejeu de `10` §9 consommera, et la procédure d'anonymisation obligatoire. Cette section-ci reste l'**énoncé** de l'item ; `13` est ce qu'on tient à la main devant le camion.
+> **`13-protocole-seance-terminal.md` porte désormais l'exécution de cet item** : les commandes dans l'ordre, en huit blocs, la fiche de relevé à vingt-sept lignes, le format de trace que le rejeu de `10` §9 consommera, et la procédure d'anonymisation obligatoire. Cette section-ci reste l'**énoncé** de l'item ; `13` est ce qu'on tient à la main devant le camion.
 >
 > **Ce que la recherche documentaire a levé sans le véhicule**, sur le manuel du fabricant (*OBDLink Family Reference and Programming Manual*, rév. F, 2025-08-29 — source primaire) :
 >

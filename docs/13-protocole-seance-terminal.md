@@ -281,7 +281,6 @@ fait au bureau. Sinon, il faut la broche 16 — et un fusible près de la source
 ```text
 (brancher, observer le message de démarrage)
 ATZ
-ATE0
 STI
 STDI
 STIX
@@ -295,7 +294,7 @@ STSLCS
 |---|---|
 | *message de démarrage* | Attendu `ELM327 v1.4b` — voir §0.2, ce n'est pas un clone |
 | `ATZ` | Réinitialisation logicielle. **Chronométrer** le temps jusqu'à l'invite : c'est le coût d'une réinitialisation, dont `10` §1 a besoin |
-| `ATE0` | Écho coupé. À faire tôt : l'écho double le volume de la trace et brouille le parsing |
+| ⛔ **pas de `ATE0`** | **Laisser l'écho actif** (c'est le défaut). Écho coupé, l'adaptateur ne renvoie plus les commandes reçues, et la capture ne contient plus que le sens `rx` : les lignes `tx` de §3.2 deviennent impossibles. Voir §3.3 |
 | `STI` | **La chaîne d'identité réelle.** `STN2232 v…` ou `STN2120 v…` — tranche §0.1 |
 | `STDI`, `STIX`, `STMFR`, `STSN` | Identité matérielle, firmware étendu, fabricant, série. ⚠️ **Le numéro de série est une donnée identifiante** — voir §4 |
 | `STVR` | Tension lue. Sur USB seul, elle sera basse ou absente ; au véhicule, c'est la ligne de base du mainteneur de batterie |
@@ -308,7 +307,6 @@ la séance et vérifier le matériel : tout le reste du dossier suppose une puce
 
 ```text
 ATZ
-ATE0
 ATS0
 ATH1
 ATSP0
@@ -549,11 +547,127 @@ quelque chose d'exploitable ; le transport de rejeu de `10` §9 est libre de le
 raffiner. Ce qui **est** figé, c'est les quatre exigences de §3.1 — une trace qui
 en manque une est à refaire, et refaire veut dire retourner au camion.
 
-### 3.3 Emplacement
+### 3.3 La capture, sur macOS
+
+`screen` est le seul terminal série présent d'origine sur macOS, et il **ne
+satisfait pas §3.1** : `screen -L` journalise, mais sans horodatage. Or c'est
+l'horodatage qui porte les trois mesures qui restent.
+
+**L'outil retenu est `tio`** — `[VÉRIFIÉ]` sur sa page de manuel, version 3.9 :
+
+```shell
+brew install tio
+```
+
+> ⓘ **`tio` est en GPL-2.0, et ça ne touche pas l'interdit n°6.** Cet interdit
+> porte sur les **dépendances** de Mecabot — ce qui se lie au binaire et se
+> redistribue, tenu par `deny.toml`. Un terminal série qu'un humain lance au
+> bureau n'est pas plus une dépendance que `git` ou `screen`. La distinction est
+> celle entre outil d'opérateur et code lié.
+
+**Trouver le port.** Lister avant et après avoir branché, ou utiliser `tio -l` :
+
+```shell
+ls /dev/cu.*
+```
+
+⚠️ **`/dev/cu.*`, jamais `/dev/tty.*`.** Sur macOS, un `tty.*` **bloque** à
+l'ouverture en attendant la porteuse (DCD) ; le `cu.*` (*call-up*) ouvre
+immédiatement. C'est la cause classique d'un terminal qui « se fige » sans rien
+afficher, et ça n'a rien à voir avec l'adaptateur.
+
+**L'invocation :**
+
+```shell
+mkdir -p traces
+tio /dev/cu.usbserial-XXXXXXXX \
+  --baudrate 115200 --databits 8 --parity none --stopbits 1 --flow none \
+  --map INLCR,OCRNL \
+  --input-mode line \
+  --timestamp --timestamp-format 24hour-start \
+  --log --log-file traces/2026-XX-XX-4bis-A0.serial.log
+```
+
+| Option | Pourquoi celle-là |
+|---|---|
+| `115200 8N1`, `--flow none` | `[VÉRIFIÉ]` au FRPM pour les OBDLink USB. À mauvais débit, `ATZ` rend du charabia — c'est le premier symptôme à reconnaître |
+| `--map INLCR` | **Sans elle, l'adaptateur ne répond à rien.** La touche Entrée émet NL (`0x0A`) ; l'interpréteur attend **CR** (`0x0D`). `INLCR` traduit NL → CR à l'aller |
+| `--map OCRNL` | L'adaptateur termine ses lignes par CR seul, ce qui réécrit la même ligne à l'écran. Traduit CR → NL au retour, donc une ligne par ligne |
+| `--input-mode line` | ⚠️ **C'est un dispositif de sûreté, pas un confort.** En mode `normal`, **chaque frappe partant immédiatement**, une faute est déjà sur le bus avant qu'on la voie. En mode `line`, la ligne se compose localement et ne part qu'à Entrée — donc elle se relit et se corrige (retour arrière) **avant** transmission. Dans une séance où l'encodeur n'existe pas et où l'humain est le seul garde (§1), c'est la différence qui compte |
+| `--timestamp-format 24hour-start` | **Relatif au début de la séance**, ce qui est exactement le champ `t` de §3.2 — et une heure murale de moins à anonymiser |
+| `--log-file …serial.log` | L'extension `*.serial.log` est **déjà** dans `.gitignore`, comme `/traces/` |
+
+#### Trois pièges, dont un dangereux
+
+1. ⛔ **Ne jamais taper une note à l'invite de l'adaptateur.** Une ligne qui ne
+   commence pas par `AT` ou `ST` **n'est pas ignorée** : elle est interprétée
+   comme des **octets hexadécimaux à émettre sur le bus**. Une note qui ne
+   contient par malchance que des caractères hexadécimaux serait donc
+   *transmise au véhicule* — c'est-à-dire un service arbitraire envoyé à un
+   module, précisément ce que le projet interdit. **Les notes vont dans un
+   fichier à part** ; les millisecondes exactes se relisent ensuite dans la
+   trace.
+2. ⛔ **Ne pas activer `--log-strip`.** Elle retire les caractères de contrôle du
+   journal, ce qui contredit l'exigence *« brut, non nettoyé »* de §3.1.
+3. ⚠️ **Garder l'écho de l'adaptateur** — voir juste en dessous.
+
+#### L'écho : correction du bloc A0
+
+**Le bloc A0 posait `ATE0` en deuxième commande. C'est une erreur de contexte, et
+elle vidait la trace de sa moitié.** `ATE0` est une bonne valeur pour **le
+pilote** — elle divise le volume et simplifie l'analyse syntaxique. Mais écho
+coupé, l'adaptateur **ne renvoie plus les commandes reçues**, donc une capture
+passive du port ne contient **que le sens `rx`**. Les lignes `dir:"tx"` de §3.2
+ne peuvent alors pas exister.
+
+**Donc : écho ON pendant toute la séance** (c'est le défaut ; il suffit de ne pas
+le couper). Et **l'écho de l'adaptateur vaut mieux que le `--local-echo` de
+`tio`** : le premier prouve ce que l'adaptateur a **reçu**, le second seulement
+ce que le terminal a **envoyé**. Sur une liaison série, c'est la différence entre
+une preuve et une intention — et un caractère perdu ne se voit que dans la
+première.
+
+`ATE0` reste à essayer **délibérément**, une fois, pour mesurer ce que l'écho
+coûte en volume. Ça appartient au bloc G, pas à l'initialisation.
+
+#### Ce que la capture ne donne pas
+
+| Exigence de §3.1 | État après `tio` |
+|---|---|
+| Horodatage à la milliseconde | ✅ `--timestamp` |
+| Brut, non nettoyé | ✅ tant que `--log-strip` reste absent |
+| Réglages en cours | ✅ ils sont dans la trace, en écho, au moment où on les tape |
+| **Sens marqué** | ⚠️ **récupérable, pas marqué.** La structure invite `>` → écho → réponse permet de reconstituer les paires, mais rien ne porte l'étiquette `tx`/`rx` |
+
+**Conséquence assumée :** ce que `tio` produit est un journal horodaté, **pas le
+JSON Lines de §3.2**. Le JSON Lines est la **cible du rejeu**, produite par une
+conversion hors ligne — un utilitaire ponctuel à écrire quand le transport de
+rejeu de `10` §9 se conçoit, et c'est là que le sens devient explicite. Le
+journal brut reste l'artefact d'origine et la source de vérité.
+
+⚠️ **Ordre à respecter** : capturer → **relire à l'œil** → anonymiser (§4) →
+convertir. Jamais convertir d'abord : §4 exige la relecture humaine **avant**
+tout filtre automatique.
+
+⚠️ `[NON VÉRIFIÉ]` **Le journal enregistre-t-il les octets avant ou après
+`--map` ?** La page de manuel ne le dit pas. Si c'est après, le journal contient
+des NL là où la liaison portait des CR — une normalisation de terminateur, pas
+une perte de contenu, mais à savoir avant d'écrire le convertisseur. **Se vérifie
+au bloc A0, gratuitement, au bureau :**
+
+```shell
+xxd traces/2026-XX-XX-4bis-A0.serial.log | head -20
+```
+
+Chercher `0d` (CR) contre `0a` (NL) en fin de ligne. C'est la vingt-septième
+mesure de la fiche, et la seule qui ne demande ni véhicule ni adaptateur branché
+sur le J1962.
+
+### 3.4 Emplacement
 
 ⛔ `traces/` — **ignoré par git**, avec `*.trace` et `*.serial.log`, déjà en
-place dans `.gitignore`. Nommage suggéré :
-`traces/2026-08-28-4bis-<bloc>.jsonl`.
+place dans `.gitignore`. Nommage suggéré : `traces/2026-08-28-4bis-<bloc>.serial.log`
+pour la capture brute, et `…​.jsonl` pour la conversion qui en dérive.
 
 ---
 
@@ -645,6 +759,7 @@ manquantes, et une mesure manquante veut dire retourner au camion.
 | 24 | Débit : requêtes/s, PID unique et en lot | G | | |
 | 25 | Trace journalisée, aux quatre exigences de §3.1 | toute | | |
 | 26 | Trace anonymisée selon §4.2 | après | | |
+| 27 | Le journal porte-t-il `0d` ou `0a` en fin de ligne ? (§3.3) | A0 | | |
 
 **L'étiquette est une colonne, pas une formalité.** Une mesure faite une fois est
 `[VÉRIFIÉ]` pour cet appareil et ce véhicule — pas pour le matériel en général.
