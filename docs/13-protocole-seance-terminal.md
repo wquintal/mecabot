@@ -149,15 +149,34 @@ invalide une hypothèse implicite du dossier.
 
 | Réglage | Défaut | Pourquoi ça mord |
 |---|---|---|
-| `ATAL` / `ATNL` | **`ATNL`** — la limite J1979 de **7 octets de données est appliquée en réception** | `09` §3 suppose qu'on envoie `2201A0` et qu'on récupère la réponse assemblée. Sans `ATAL`, une réponse UDS longue est refusée avant même d'être réassemblée |
+| `ATAL` / `ATNL` | **`ATNL`** — `[VÉRIFIÉ]` *« SAE J1979 limits the number of data bytes in an OBD message to seven, and by default, OBDLink enforces this limit for reception »* | `09` §3 suppose qu'on envoie `2201A0` et qu'on récupère la réponse assemblée. **Ce que ça fait à une réponse *réassemblée* n'est pas écrit** — voir la réserve ci-dessous, et le bloc C qui la tranche |
 | `STCSEGR` / `STCSEGT` | **`0` — segmentation CAN désactivée** | Nuance importante sur *« ISO-TP délégué au firmware »* de `09` §3 : la délégation vient de `ATCAF1` pour les préréglages **ISO 15765** (33/34/53/54). Sur les préréglages **ISO 11898 bruts** (51/52), rien n'est réassemblé tant que `STCSEGR 1` n'est pas posé. **Un choix de préréglage décide donc si la couche ISO-TP existe** |
 | Paires de contrôle de flux | **automatiques**, `TxID = RxID − 8` | Convention qui tient pour le groupe motopropulseur (`7E8 → 7E0`). Un module MS-CAN dont l'identifiant ne suit pas la convention **ne recevra jamais sa trame de contrôle de flux** : `FC RX TIMEOUT`, et la réponse multi-trames échoue. Il faut alors `STCFCPA` |
 | `STCFCPA` | — | ⚠️ **Effet de bord majeur :** *« When using STCFCPA, automatic flow control pair generation is disabled, and only the manually added pairs will be used. »* Ajouter **une** paire coupe l'automatisme pour **toutes** les autres. Un pilote qui ajoute des paires à la demande casse ce qui marchait |
 
+> ⚠️ **Réserve sur `ATNL`, ajoutée en relecture — la portée de la limite n'est
+> pas établie.** Une première rédaction de cette ligne concluait que *« sans
+> `ATAL`, une réponse UDS longue est refusée avant même d'être réassemblée »*.
+> **C'était une inférence présentée comme un fait**, et il existe une preuve
+> contraire dans le manuel lui-même : l'exemple de `ATCAF 1` montre un `0902`
+> qui renvoie **20 octets (`014`) en trois trames réassemblées**, sans qu'`ATAL`
+> soit posé nulle part. Deux lectures restent ouvertes :
+>
+> 1. la limite porte sur les messages **mono-trame**, et le réassemblage ISO-TP
+>    sous `ATCAF1` n'y est pas soumis — dans ce cas `ATAL` n'est pas requis pour
+>    lire un VIN ;
+> 2. la limite porte sur le message **résultant**, et l'exemple du manuel tourne
+>    sous une configuration qu'il ne détaille pas.
+>
+> Le manuel ne tranche pas, et l'exemple n'est pas une spécification. **La seule
+> chose à faire est de mesurer** : c'est la mesure à deux points du bloc C. En
+> attendant, le protocole pose `ATAL` **avant** toute requête longue — coût nul
+> si la lecture n°1 est la bonne, et évite un échec inexpliqué si c'est la n°2.
+
 **Conséquence de conception, à porter en `09` §3 :** la formule *« le firmware
 gère ISO-TP »* est vraie **sous conditions**, et les conditions sont un
-préréglage ISO 15765, `ATCAF1`, `ATAL`, et des paires de contrôle de flux
-cohérentes. La machine à états d'adaptateur de `10` §1 doit tenir ces quatre
+préréglage ISO 15765, `ATCAF1`, `ATAL` (sous la réserve ci-dessus), et des
+paires de contrôle de flux cohérentes. La machine à états d'adaptateur de `10` §1 doit tenir ces quatre
 réglages comme de l'état, pas comme une initialisation qu'on oublie.
 
 ### 0.6 Les erreurs de l'adaptateur sont une couche à part
@@ -318,11 +337,20 @@ décision de conception que ce bloc alimente.
 
 ```text
 ATSH 7E0
+ATAL            ← AVANT les deux requêtes longues ; voir la réserve de §0.5
 0902
 2201 F1 90      ← noter tel quel : voir la remarque ci-dessous
 0100
 0300
 ```
+
+⚠️ **`ATAL` d'abord, et ce n'est pas cosmétique.** `ATNL` est le défaut d'usine
+et `0902` comme `22F190` attendent tous deux une réponse **multi-trames**. Que
+la limite de 7 octets morde ou non sur un message réassemblé n'est pas établi
+(§0.5) — mais l'ordre inverse fait courir le risque d'un échec au **premier
+contact**, c'est-à-dire au moment où on a le moins d'éléments pour l'attribuer à
+la bonne cause. Le bloc C mesure `ATNL` **délibérément**, une fois la chaîne
+connue bonne.
 
 **Sonde recommandée par `07` §4bis : `$22 F190`.** Un DID normalisé par
 l'ISO 14229, donc réponse prévisible, et il valide d'un coup la chaîne complète
@@ -346,12 +374,20 @@ C'est le bloc qui mesure ce que `09` §3 laisse en `[NON VÉRIFIÉ]` : *« jusqu
 quelle taille de réponse le STN2120 assemble correctement »*.
 
 ```text
-ATAL            ← lever la limite de 7 octets ; voir §0.5
+ATAL            ← déjà posé au bloc B ; le reposer est sans effet et sans risque
 22F190
 09 02
 (une requête $22 multi-DID, si le module l'accepte : 22 F190 F188 F18C)
 ATNL            ← remettre la limite, et refaire la plus longue des requêtes
+ATAL            ← ⛔ RESTAURER avant de quitter le bloc : D et F réutilisent 22F190
 ```
+
+⛔ **Ne pas sortir de ce bloc sous `ATNL`.** C'est le seul endroit de la séance
+où la limite est posée volontairement, et les blocs D et F réutilisent `22F190`
+comme sonde. Oublier la dernière ligne, c'est mesurer un délai de commutation ou
+une chute de session **sous un réglage différent de celui du bloc B** — et donc
+comparer deux choses qui ne se comparent pas. Journaliser le changement comme un
+événement `cfg` dans la trace (§3), dans les deux sens.
 
 | Ce qu'on cherche | Comment on le lit |
 |---|---|

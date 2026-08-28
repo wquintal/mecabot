@@ -41,7 +41,7 @@ Le problème n'est pas théorique : l'agent oubliera de fermer. Il n'y a aucune 
 
 **Règle de conception :** un outil qui touche plusieurs modules **ordonne son travail par bus** — tout le HS-CAN, puis une commutation, puis tout le MS-CAN. `scan_modules` et `read_all_dtc` fonctionnent ainsi. L'ordre d'appel de l'agent ne doit jamais déterminer l'ordre de commutation.
 
-⚠️ [NON VÉRIFIÉ] Le délai réel de commutation et la nécessité de réinitialiser sont l'item 4bis de `07`. Cette section est un plan qui suppose des chiffres non mesurés.
+⚠️ [NON VÉRIFIÉ] **Le délai réel de commutation** est l'item 4bis de `07`. Cette section reste un plan qui suppose un chiffre non mesuré. *(La **nécessité** de réinitialiser, elle, n'est plus une hypothèse depuis le 2026-08-28 — voir l'encadré ci-dessous.)*
 
 > ### ✅ Partiellement levé le 2026-08-28 — la **nécessité** de réinitialiser n'est plus une hypothèse
 >

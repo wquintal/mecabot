@@ -55,7 +55,26 @@ contient le dossier, aucun code applicatif n'existe. La section
   attend le relevé de `STI` sur l'appareil (`docs/13` §0.1).
 - `docs/09` §3 : la délégation d'ISO-TP au firmware gagne ses **quatre
   conditions** (préréglage ISO 15765, `ATCAF1`, `ATAL`, paires de contrôle de
-  flux) — aucune n'est acquise dans la configuration d'usine.
+  flux) — aucune n'est acquise dans la configuration d'usine. **La phrase
+  d'origine porte désormais la condition elle-même** : l'encadré ne suffisait
+  pas, un lecteur qui ne lisait que la ligne 78 en tirait le contraire.
+- ⚠️ **`docs/13` §0.5 : réserve sur la portée de `ATNL`, relevée en relecture.**
+  La rédaction initiale concluait qu'une réponse UDS longue est *refusée* sans
+  `ATAL` — c'était une **inférence présentée comme un fait**, et l'exemple `0902`
+  du manuel la contredit (20 octets réassemblés en trois trames, sans `ATAL`).
+  Deux lectures restent ouvertes, le bloc C les tranche par une mesure à deux
+  points, et le protocole pose `ATAL` avant toute requête longue en attendant.
+- 🐛 **`docs/13` blocs B et C : ordre de `ATAL` corrigé.** `ATAL` n'était posé
+  qu'au bloc C, alors que le bloc B tire `0902` et `22F190`, tous deux
+  multi-trames ; et le bloc C sortait sous `ATNL`, laissant les blocs D et F
+  mesurer sous un réglage différent de celui du premier contact. Un échec au
+  premier contact serait arrivé au pire moment pour l'attribuer à la bonne cause.
+- `docs/05` §1.2 : **taille de message ≠ taille de tampon.** Les 4 ko publiés
+  bornent le réassemblage ISO-TP ; la capacité du tampon interne reste
+  `[INTROUVABLE]`, et la phrase d'origine du document était donc exacte.
+- `docs/07` §4bis : les consignes résiduelles renvoyant à `ATST` passent à
+  `STPTO`, et la commutation MS-CAN n'est plus listée comme inconnue — seul son
+  délai l'est.
 - `docs/10` §1 : la **nécessité** de réinitialiser après une commutation de bus
   n'est plus une hypothèse mais une conséquence de l'architecture de la puce ;
   seul le **délai** reste à mesurer. §4 gagne l'**étage adaptateur** de la

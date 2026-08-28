@@ -143,7 +143,7 @@ Les items 1 à 4 sont gratuits et prennent moins d'une heure au total. Ils devra
 > - quelques `$22` qui **réussissent** — dont `F190` (VIN), `F188`/`F18C`
 > - quelques `$22` qui **échouent** (`7F .. 31`) — au moins aussi importants que les succès, `10` §4
 > - un `$19` sur un module
-> - **une session laissée volontairement expirer**, pour voir ce que fait `ATST`
+> - **une session laissée volontairement expirer**, pour voir ce que fait le délai d'attente — `STPTO`, et non `ATST` qui est déprécié (`13` §0.3)
 > - une réponse longue, pour borner le réassemblage du STN
 >
 > Enregistre le brut, horodaté, sans nettoyer. Les bizarreries sont précisément ce qui a de la valeur.
@@ -151,11 +151,11 @@ Les items 1 à 4 sont gratuits et prennent moins d'une heure au total. Ils devra
 | À caractériser | Pourquoi |
 |---|---|
 | Séquence d'initialisation qui fonctionne (débit, `ATZ`, `ATE0`, `ATSP`, protocole détecté) | Le pilote série en dépend directement |
-| **Commande exacte de commutation MS-CAN** sur le STN2120, et son délai | Sans ça, aucun module de carrosserie n'est joignable (`05` §1.1) |
+| ~~Commande exacte de commutation MS-CAN~~ ✅ **`STP 53`** — reste **son délai**, la vraie mesure | Sans ça, aucun module de carrosserie n'est joignable (`05` §1.1). La commande est levée sur source primaire ; le délai décide de l'ordonnancement de `10` §1 |
 | **Taille maximale de réponse réassemblée** par l'adaptateur | `09` §3 délègue ISO-TP au firmware — il faut savoir jusqu'où ça tient |
 | Débit réel en requêtes/seconde, PID unique et en lot | Conditionne la durée d'un balayage de DID et les volumes de `04` §1.2 |
 | Format exact des lignes de réponse, et comportement sur réponse négative (`7F`) | Le décodeur en dépend |
-| Comportement du timeout `ATST` et nécessité de `$3E TesterPresent` | Évite de perdre la session en pleine acquisition |
+| Comportement du délai d'attente (**`STPTO ms`**, défaut 102 ms — `ATST` est déprécié) et nécessité de `$3E TesterPresent` | Évite de perdre la session en pleine acquisition. ⚠️ **Deux minuteurs à ne pas confondre** : celui de l'adaptateur et celui de la session UDS (`10` §1) |
 
 **Sonde de premier contact recommandée :** `$22 F190` (VIN) — DID normalisé par ISO 14229, donc réponse prévisible, et ça valide d'un coup la chaîne complète série → UDS → décodage.
 

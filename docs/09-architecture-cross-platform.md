@@ -75,7 +75,7 @@ Un binaire Rust est par ailleurs le meilleur format de distribution possible ici
 
 Bonne nouvelle qui allège beaucoup le choix de Rust, et que `05` §3.2 laissait dans l'ombre.
 
-Mon inquiétude sur l'immaturité de l'écosystème Rust portait surtout sur l'absence de pile ISO-TP utilisable (`ecu-diagnostics` en GPL-3.0 avec un build docs.rs cassé, `socketcan` Linux-only). **Mais avec un adaptateur STN, tu n'implémentes pas ISO-TP** : le firmware de l'adaptateur gère la segmentation multi-trames, les trames de contrôle de flux et le réassemblage. Tu envoies `2201A0` et tu récupères la réponse assemblée.
+Mon inquiétude sur l'immaturité de l'écosystème Rust portait surtout sur l'absence de pile ISO-TP utilisable (`ecu-diagnostics` en GPL-3.0 avec un build docs.rs cassé, `socketcan` Linux-only). **Mais avec un adaptateur STN, tu n'implémentes pas ISO-TP** : le firmware de l'adaptateur gère la segmentation multi-trames, les trames de contrôle de flux et le réassemblage. Tu envoies `2201A0` et tu récupères la réponse assemblée — ⚠️ **mais seulement si quatre réglages sont tenus, dont aucun n'est acquis en sortie d'usine.** Voir l'encadré du 2026-08-28 ci-dessous : la délégation est **conditionnelle**, et cette phrase seule est trompeuse.
 
 Ce qui reste à écrire est donc beaucoup plus modeste que dans le cas général :
 
@@ -97,7 +97,7 @@ Ce qui reste à écrire est donc beaucoup plus modeste que dans le cas général
 > |---|---|---|
 > | Un préréglage **ISO 15765** (`33`/`34`/`53`/`54`) | selon `ATSP` | Les préréglages `51`/`52` sont de l'**ISO 11898 brut** : rien n'est réassemblé tant que `STCSEGR 1` n'est pas posé |
 > | `ATCAF1` — formatage automatique CAN | ✅ actif | Pas de génération de PCI, pas de retrait des PCI en réponse |
-> | `ATAL` — messages longs autorisés | ⛔ **`ATNL`** | La limite J1979 de **7 octets de données est appliquée en réception** : une réponse UDS longue est refusée avant d'être réassemblée |
+> | `ATAL` — messages longs autorisés | ⛔ **`ATNL`** | La limite J1979 de **7 octets de données est appliquée en réception**. ⚠️ **Sa portée sur un message *réassemblé* n'est pas établie** — l'exemple `0902` du manuel rend 20 octets en trois trames sans qu'`ATAL` soit posé. Réserve et mesure en `13` §0.5 |
 > | Paires de contrôle de flux cohérentes | automatiques, `TxID = RxID − 8` | Un module dont l'identifiant ne suit pas la convention ne reçoit **jamais** sa trame de contrôle de flux → `FC RX TIMEOUT`. Et ⚠️ **ajouter une paire par `STCFCPA` coupe l'automatisme pour toutes les autres** |
 >
 > **Conséquence sur la machine à états d'adaptateur de `10` §1 :** ces quatre réglages sont de l'**état à tenir**, pas une initialisation qu'on pose et qu'on oublie. Un choix de préréglage décide si la couche ISO-TP existe.
