@@ -75,7 +75,7 @@ Un binaire Rust est par ailleurs le meilleur format de distribution possible ici
 
 Bonne nouvelle qui allège beaucoup le choix de Rust, et que `05` §3.2 laissait dans l'ombre.
 
-Mon inquiétude sur l'immaturité de l'écosystème Rust portait surtout sur l'absence de pile ISO-TP utilisable (`ecu-diagnostics` en GPL-3.0 avec un build docs.rs cassé, `socketcan` Linux-only). **Mais avec un adaptateur STN, tu n'implémentes pas ISO-TP** : le firmware de l'adaptateur gère la segmentation multi-trames, les trames de contrôle de flux et le réassemblage. Tu envoies `2201A0` et tu récupères la réponse assemblée — ⚠️ **mais seulement si quatre réglages sont tenus, dont aucun n'est acquis en sortie d'usine.** Voir l'encadré du 2026-08-28 ci-dessous : la délégation est **conditionnelle**, et cette phrase seule est trompeuse.
+Mon inquiétude sur l'immaturité de l'écosystème Rust portait surtout sur l'absence de pile ISO-TP utilisable (`ecu-diagnostics` en GPL-3.0 avec un build docs.rs cassé, `socketcan` Linux-only). **Mais avec un adaptateur STN, tu n'implémentes pas ISO-TP** : le firmware de l'adaptateur gère la segmentation multi-trames, les trames de contrôle de flux et le réassemblage. Tu envoies `2201A0` et tu récupères la réponse assemblée — ⚠️ **mais seulement si quatre réglages sont tenus *ensemble*, et la configuration d'usine ne les réunit pas.** Deux le sont déjà (`ATCAF1`, et les paires de contrôle de flux automatiques) ; le préréglage dépend de `ATSP` ; et `ATAL` est ⛔ à `ATNL`. Voir l'encadré du 2026-08-28 ci-dessous : la délégation est **conditionnelle**, et cette phrase seule est trompeuse.
 
 Ce qui reste à écrire est donc beaucoup plus modeste que dans le cas général :
 

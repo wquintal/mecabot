@@ -55,7 +55,8 @@ contient le dossier, aucun code applicatif n'existe. La section
   attend le relevé de `STI` sur l'appareil (`docs/13` §0.1).
 - `docs/09` §3 : la délégation d'ISO-TP au firmware gagne ses **quatre
   conditions** (préréglage ISO 15765, `ATCAF1`, `ATAL`, paires de contrôle de
-  flux) — aucune n'est acquise dans la configuration d'usine. **La phrase
+  flux) — la configuration d'usine ne les réunit **pas ensemble**, même si deux
+  d'entre elles y sont actives. **La phrase
   d'origine porte désormais la condition elle-même** : l'encadré ne suffisait
   pas, un lecteur qui ne lisait que la ligne 78 en tirait le contraire.
 - ⚠️ **`docs/13` §0.5 : réserve sur la portée de `ATNL`, relevée en relecture.**
