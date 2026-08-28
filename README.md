@@ -51,6 +51,7 @@ documents sont là pour qui veut vérifier un raisonnement.
 | [`10`](docs/10-conception-serveur-mcp.md) | Conception du serveur MCP | Outils, état, erreurs, feuille de route de mise en œuvre |
 | [`11`](docs/11-modele-de-connaissance-vehicule.md) | Modèle de connaissance véhicule | Les cinq couches : comment l'app reste générique |
 | [`12`](docs/12-standards-de-developpement.md) | Standards de développement | Ce qui est emprunté à punt-kit, et ce qui ne se transpose pas |
+| [`13`](docs/13-protocole-seance-terminal.md) | Protocole de la séance au terminal | L'item 4bis, exécutable : les commandes dans l'ordre, la trace, l'anonymisation |
 
 ---
 

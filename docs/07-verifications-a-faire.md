@@ -114,6 +114,24 @@ Les items 1 à 4 sont gratuits et prennent moins d'une heure au total. Ils devra
 
 **Méthode :** un terminal série sur `/dev/tty.usbmodem*`, à la main, avant d'écrire une ligne de Rust. Quelques commandes AT/ST et quelques requêtes.
 
+> ### 📋 **Le protocole détaillé est en `13`, écrit le 2026-08-28 — et la séance a rétréci**
+>
+> **`13-protocole-seance-terminal.md` porte désormais l'exécution de cet item** : les commandes dans l'ordre, en huit blocs, la fiche de relevé à vingt-six lignes, le format de trace que le rejeu de `10` §9 consommera, et la procédure d'anonymisation obligatoire. Cette section-ci reste l'**énoncé** de l'item ; `13` est ce qu'on tient à la main devant le camion.
+>
+> **Ce que la recherche documentaire a levé sans le véhicule**, sur le manuel du fabricant (*OBDLink Family Reference and Programming Manual*, rév. F, 2025-08-29 — source primaire) :
+>
+> - `[VÉRIFIÉ]` **La commutation MS-CAN est `STP 53`**, un changement de préréglage de protocole. ⛔ Il n'y a **pas** de relais et **pas** de commande `ATSW`/`ATMSCAN` — `05` §3.1 est faux sur ce point. Un seul périphérique CAN, remappé par logiciel, **un seul bus à la fois**.
+> - `[VÉRIFIÉ]` **`ATST` est déprécié**, remplacé par `STPTO ms`, défaut **102 ms**.
+> - `[VÉRIFIÉ]` **115200 bps, 8N1** sur les OBDLink USB ; jusqu'à 2 Mbps avec `ATE0`.
+> - `[VÉRIFIÉ]` **Taille de message de 4 ko** pour l'EX, ce qui recoupe le plafond de 4095 octets de l'ISO 15765-2 classique.
+> - `[VÉRIFIÉ]` **Le format des lignes de réponse est documenté et exemplifié** — longueur en hexadécimal sur sa propre ligne, puis `n:` par trame, sous `ATCAF1`.
+> - `[VÉRIFIÉ]` **Quatre réglages par défaut mordent** : `ATNL` limite la réception à 7 octets, `STCSEGR` est à 0, les paires de contrôle de flux supposent `RxID − 8`, et une paire manuelle coupe l'automatisme pour toutes les autres.
+> - ⚠️ **L'OBDLink EX est probablement un STN2232, pas un STN2120** — le dossier écrit STN2120 partout. `STI` tranche en une commande.
+>
+> **Il reste trois mesures que le manuel ne peut pas donner**, et ce sont les vraies : **le délai de commutation de bus**, **à quelle attente la session UDS tombe et ce que la chute produit**, et **le débit réel en requêtes par seconde**.
+>
+> ---
+>
 > ### ⚠️ **Journalise la séance — c'est le point ajouté le 2026-08-25, et il change la valeur de l'item**
 >
 > Cet item ne sert pas seulement à répondre aux six questions du tableau ci-dessous. **Le journal de la séance devient le premier jeu de test du projet** : `10` §9 établit qu'un troisième `Transport` de rejeu permet de développer la machine à états et le décodeur contre ce que le véhicule a *réellement* répondu, sans avoir le camion sous la main.
@@ -125,7 +143,7 @@ Les items 1 à 4 sont gratuits et prennent moins d'une heure au total. Ils devra
 > - quelques `$22` qui **réussissent** — dont `F190` (VIN), `F188`/`F18C`
 > - quelques `$22` qui **échouent** (`7F .. 31`) — au moins aussi importants que les succès, `10` §4
 > - un `$19` sur un module
-> - **une session laissée volontairement expirer**, pour voir ce que fait `ATST`
+> - **une session laissée volontairement expirer**, pour voir ce que fait le délai d'attente — `STPTO`, et non `ATST` qui est déprécié (`13` §0.3)
 > - une réponse longue, pour borner le réassemblage du STN
 >
 > Enregistre le brut, horodaté, sans nettoyer. Les bizarreries sont précisément ce qui a de la valeur.
@@ -133,11 +151,11 @@ Les items 1 à 4 sont gratuits et prennent moins d'une heure au total. Ils devra
 | À caractériser | Pourquoi |
 |---|---|
 | Séquence d'initialisation qui fonctionne (débit, `ATZ`, `ATE0`, `ATSP`, protocole détecté) | Le pilote série en dépend directement |
-| **Commande exacte de commutation MS-CAN** sur le STN2120, et son délai | Sans ça, aucun module de carrosserie n'est joignable (`05` §1.1) |
+| ~~Commande exacte de commutation MS-CAN~~ ✅ **`STP 53`** — reste **son délai**, la vraie mesure | Sans ça, aucun module de carrosserie n'est joignable (`05` §1.1). La commande est levée sur source primaire ; le délai décide de l'ordonnancement de `10` §1 |
 | **Taille maximale de réponse réassemblée** par l'adaptateur | `09` §3 délègue ISO-TP au firmware — il faut savoir jusqu'où ça tient |
 | Débit réel en requêtes/seconde, PID unique et en lot | Conditionne la durée d'un balayage de DID et les volumes de `04` §1.2 |
 | Format exact des lignes de réponse, et comportement sur réponse négative (`7F`) | Le décodeur en dépend |
-| Comportement du timeout `ATST` et nécessité de `$3E TesterPresent` | Évite de perdre la session en pleine acquisition |
+| Comportement du délai d'attente (**`STPTO ms`**, défaut 102 ms — `ATST` est déprécié) et nécessité de `$3E TesterPresent` | Évite de perdre la session en pleine acquisition. ⚠️ **Deux minuteurs à ne pas confondre** : celui de l'adaptateur et celui de la session UDS (`10` §1) |
 
 **Sonde de premier contact recommandée :** `$22 F190` (VIN) — DID normalisé par ISO 14229, donc réponse prévisible, et ça valide d'un coup la chaîne complète série → UDS → décodage.
 

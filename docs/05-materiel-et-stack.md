@@ -32,6 +32,11 @@ Il faut une commutation **électronique** (pilotée par logiciel), pas un interr
 
 Le STN2120 est la puce de génération actuelle d'OBD Solutions, remplaçant l'ELM327 : horloge plus rapide, tampon interne plus grand, commutation multi-bus native. Les chiffres exacts de tampon ne sont pas publiés, mais les retours communautaires situent le débit utile à **~300-500 trames/s** en conditions réelles [NON VÉRIFIÉ], contre 20-50 PID/s pour un ELM327.
 
+> ⚠️ **Deux réserves ajoutées le 2026-08-28, sur le manuel du fabricant** (*OBDLink Family Reference and Programming Manual*, rév. F, 2025-08-29) :
+>
+> 1. **La puce de l'OBDLink EX actuel est un STN2232, pas un STN2120.** Le FRPM range le **STN2120** parmi les **circuits interpréteurs OBD-vers-UART vendus seuls**, et le donne **obsolète** ; l'EX est listé en STN2230 / STN2231 (hors production) puis **STN2232** (actif). Tout le dossier écrit STN2120 — à corriger partout **une fois relevé sur l'appareil**, ce que `STI` fait en une commande (`13` §0.1). Ça compte, parce que le manuel donne les tailles de tampon **par appareil**.
+> 2. **Ce qui est publié est une taille de *message*, pas une taille de tampon** — la phrase ci-dessus reste donc exacte, et la nuance compte : `[VÉRIFIÉ]` **4 ko de taille maximale de message** pour l'OBDLink EX, contre 2 ko pour un SX ou un STN1110. C'est la borne du **réassemblage ISO-TP** (elle recoupe le plafond de 4095 octets du champ de longueur sur 12 bits de l'ISO 15765-2), et **non** la capacité du tampon interne, qui reste `[INTROUVABLE]`. Ne pas dériver l'une de l'autre : un tampon plus petit qu'un message maximal se gère par flux, et rien ne dit lequel des deux borne le débit. La fourchette de **300-500 trames/s** reste `[COMMUNAUTÉ]` — le manuel ne publie pas de débit utile. Le bloc G de `13` la mesure sans la promouvoir.
+
 ### 1.3 Pourquoi les clones ELM327 ne conviennent pas
 
 FORScan a une position officielle : « nous ne recommandons plus aucun ELM327 » [VÉRIFIÉ, `forscan.org`].
@@ -115,7 +120,13 @@ cantools        → décodage DBC du trafic de diffusion
 ELM327-emulator → tests sans véhicule (Python, ~670 étoiles)
 ```
 
-**⚠️ Le trou à combler soi-même :** ni python-can ni udsoncan n'ont la moindre notion de commutation de bus au connecteur OBD. Il faudra envoyer les commandes STN spécifiques (`ATSW`/`ATMSCAN` et pilotage du relais) via pyserial **avant** d'émettre les requêtes ISO-TP, puis router les trames diagnostiques à travers cette même connexion série. **Aucune bibliothèque ne fait ça pour Ford aujourd'hui.** C'est le premier vrai morceau d'ingénierie du projet.
+**⚠️ Le trou à combler soi-même :** ni python-can ni udsoncan n'ont la moindre notion de commutation de bus au connecteur OBD. Il faudra envoyer la commande STN de sélection de bus via le port série **avant** d'émettre les requêtes ISO-TP, puis router les trames diagnostiques à travers cette même connexion série. **Aucune bibliothèque ne fait ça pour Ford aujourd'hui.** C'est le premier vrai morceau d'ingénierie du projet.
+
+> ⛔ **Corrigé le 2026-08-28 sur le manuel du fabricant.** Ce paragraphe disait *« les commandes STN spécifiques (`ATSW`/`ATMSCAN` et pilotage du relais) »*. **Ces deux commandes n'existent pas, et il n'y a pas de relais.**
+>
+> `[VÉRIFIÉ]` *OBDLink Family Reference and Programming Manual*, rév. F (2025-08-29), §8.6 : l'appareil n'a **qu'un seul périphérique CAN**, mappé sur différentes broches **par logiciel**, donc **un seul bus actif à la fois**. La commutation est un **changement de préréglage de protocole** : `STP 33` pour HS-CAN (broches 6/14, 500 kbps), **`STP 53` pour le MS-CAN Ford** (broches 3/11, 125 kbps), encadré au besoin de `STPC` / `STPO`.
+>
+> Conséquence qui n'était pas visible sous l'hypothèse du relais : le périphérique étant **remappé**, toute session UDS ouverte sur l'autre bus est perdue par construction. Détail et protocole de mesure en `13` §0.1 et §2 bloc D.
 
 ### 3.2 Rust — pas encore
 
