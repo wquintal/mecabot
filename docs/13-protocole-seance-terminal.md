@@ -220,8 +220,10 @@ seule. Le protocole ci-dessous **répond à la question en passant** — bloc A0
 ### Au bureau
 
 - Adaptateur branché au Mac, **rien d'autre**.
-- Un terminal série. `screen /dev/tty.usbmodem* 115200` suffit ; un outil qui
-  **journalise** est nettement préférable — voir §3.
+- Un terminal série **qui journalise** : l'invocation exacte est en §3.3, et
+  ⚠️ **c'est un nœud `/dev/cu.*`, jamais `/dev/tty.*`** — un `tty.*` bloque à
+  l'ouverture sur macOS (§3.3). Un `screen` dépanne, mais il ne journalise pas,
+  et §3.1 exige la trace.
 - ⛔ **Un seul programme ouvre le port.** Fermer FORScan, la VM Windows, toute
   application OBD. Deux écrivains produisent `STOPPED` ou du silence, pas une
   erreur lisible (§0.6).
@@ -553,7 +555,9 @@ en manque une est à refaire, et refaire veut dire retourner au camion.
 satisfait pas §3.1** : `screen -L` journalise, mais sans horodatage. Or c'est
 l'horodatage qui porte les trois mesures qui restent.
 
-**L'outil retenu est `tio`** — `[VÉRIFIÉ]` sur sa page de manuel, version 3.9 :
+**L'outil retenu est `tio`**, version 3.9 — `[VÉRIFIÉ]` **sur son code source**,
+et non sur sa page de manuel, qui se contredit sur un point qui compte (encadré
+du 2026-09-02 plus bas) :
 
 ```shell
 brew install tio
@@ -582,7 +586,7 @@ afficher, et ça n'a rien à voir avec l'adaptateur.
 mkdir -p traces
 tio /dev/cu.usbserial-XXXXXXXX \
   --baudrate 115200 --databits 8 --parity none --stopbits 1 --flow none \
-  --map INLCR,OCRNL \
+  --map ICRCRNL \
   --input-mode line \
   --timestamp --timestamp-format 24hour-start \
   --log --log-file traces/2026-XX-XX-4bis-A0.serial.log
@@ -591,11 +595,35 @@ tio /dev/cu.usbserial-XXXXXXXX \
 | Option | Pourquoi celle-là |
 |---|---|
 | `115200 8N1`, `--flow none` | `[VÉRIFIÉ]` au FRPM pour les OBDLink USB. À mauvais débit, `ATZ` rend du charabia — c'est le premier symptôme à reconnaître |
-| `--map INLCR` | **Sans elle, l'adaptateur ne répond à rien.** La touche Entrée émet NL (`0x0A`) ; l'interpréteur attend **CR** (`0x0D`). `INLCR` traduit NL → CR à l'aller |
-| `--map OCRNL` | L'adaptateur termine ses lignes par CR seul, ce qui réécrit la même ligne à l'écran. Traduit CR → NL au retour, donc une ligne par ligne |
+| ⛔ **rien sur le sens aller** | `[VÉRIFIÉ]` sur le source : `tio` met stdin en `cfmakeraw` (`tty.c:1172`), donc **Entrée émet CR (`0x0D`) et il part tel quel**. Il n'y a rien à traduire à l'aller, et **y toucher casse la séance** — voir l'encadré ci-dessous |
+| `--map ICRCRNL` | L'adaptateur termine ses lignes par CR seul, ce qui réécrit la même ligne à l'écran. `ICRCRNL` **ajoute** un NL à l'affichage sans remplacer le CR. Deux effets, tous deux voulus : l'écran redevient lisible, **et l'horodatage se réarme par ligne** (`tty.c:2848`) — sans lui, `do_timestamp` ne se réarme que sur un NL reçu, donc une séance entière pourrait ne porter **qu'un seul horodatage** |
 | `--input-mode line` | ⚠️ **C'est un dispositif de sûreté, pas un confort.** En mode `normal`, **chaque frappe partant immédiatement**, une faute est déjà sur le bus avant qu'on la voie. En mode `line`, la ligne se compose localement et ne part qu'à Entrée — donc elle se relit et se corrige (retour arrière) **avant** transmission. Dans une séance où l'encodeur n'existe pas et où l'humain est le seul garde (§1), c'est la différence qui compte |
-| `--timestamp-format 24hour-start` | **Relatif au début de la séance**, ce qui est exactement le champ `t` de §3.2 — et une heure murale de moins à anonymiser |
+| `--timestamp-format 24hour-start` | **Relatif au début de la séance** — donc une heure murale de moins à anonymiser, ce qui est la vraie raison de le préférer. ⚠️ **Ce n'est pas le champ `t` de §3.2** : `[VÉRIFIÉ]` sur `timestamp.c`, la sortie est `hh:mm:ss.mmm` (un `strftime("%H:%M:%S")` sur l'écart, puis `.%03ld`), pas un entier de millisecondes. La conversion en `t` est arithmétique et appartient au convertisseur hors ligne |
 | `--log-file …serial.log` | L'extension `*.serial.log` est **déjà** dans `.gitignore`, comme `/traces/` |
+
+> ### ⛔ **Correction du 2026-09-02 : la page de manuel de `tio` est inversée par rapport à son propre code**
+>
+> La première rédaction de cette section posait `--map INLCR,OCRNL`, en lisant la
+> page de manuel : *« Map … characters on input **to** the serial device or
+> output **from** the serial device »*. **Le code fait le contraire**, et le code
+> fait loi :
+>
+> | | Ce que la page de manuel laisse croire | `[VÉRIFIÉ]` dans `tio` 3.9 |
+> |---|---|---|
+> | `I*` | vers l'adaptateur | **reçu de l'adaptateur** — `INLCR` est posé dans le `c_iflag` du port (`tty.c:1399`), donc le noyau traduit **avant** le `read()` |
+> | `O*` | reçu de l'adaptateur | **vers l'adaptateur** — `OCRNL` réécrit `\r` en `\n` dans `forward_to_tty(device_fd, …)` (`tty.c:2441`, appelée en `2956` et `2972`) |
+>
+> **Donc l'invocation d'origine était nuisible, pas seulement inutile :**
+> `OCRNL` transformait en NL le CR qu'Entrée émet correctement, **à l'aller** —
+> c'est-à-dire qu'elle produisait exactement la panne (« l'adaptateur ne répond
+> à rien ») qu'elle prétendait corriger. Et `INLCR` traduisait NL → CR sur le
+> flux **reçu**, où il n'y a pas de NL à traduire : sans effet.
+>
+> ⚠️ **La leçon dépasse `tio`.** Une page de manuel est une source secondaire :
+> elle décrit une intention, le source décrit le comportement. Là où le dossier
+> écrit `[VÉRIFIÉ]` sur un outil, c'est désormais **le source** à la version
+> épinglée qui porte l'étiquette. Constat relevé en relecture par CodeRabbit sur
+> la PR #3, dont le mécanisme (`c_iflag` appliqué avant le journal) était exact.
 
 #### Trois pièges, dont un dangereux
 
@@ -627,6 +655,13 @@ ce que le terminal a **envoyé**. Sur une liaison série, c'est la différence e
 une preuve et une intention — et un caractère perdu ne se voit que dans la
 première.
 
+⚠️ **Et `--local-echo` n'est pas seulement un affichage :** `[VÉRIFIÉ]`
+`optional_local_echo` appelle `log_putc` (`tty.c:187`), donc les frappes
+**entrent dans le même fichier** que les octets reçus, sans rien qui les
+distingue. L'activer ne marquerait donc pas le sens `tx` — ça mêlerait deux
+sources dans un journal qui n'a pas de champ pour les séparer, et rendrait le
+`0d`/`0a` de la ligne ci-dessous ambigu. **Laisser `--local-echo` absent.**
+
 `ATE0` reste à essayer **délibérément**, une fois, pour mesurer ce que l'écho
 coûte en volume. Ça appartient au bloc G, pas à l'initialisation.
 
@@ -635,7 +670,7 @@ coûte en volume. Ça appartient au bloc G, pas à l'initialisation.
 | Exigence de §3.1 | État après `tio` |
 |---|---|
 | Horodatage à la milliseconde | ✅ `--timestamp` |
-| Brut, non nettoyé | ✅ tant que `--log-strip` reste absent |
+| Brut, non nettoyé | ✅ **avec l'invocation ci-dessus**, et la condition n'est pas seulement `--log-strip`. `[VÉRIFIÉ]` : le journal reçoit l'octet **après** traduction par le `c_iflag` (`log_putc(input_char)`, `tty.c:2864`), donc `ICRNL`, `IGNCR` et `INLCR` **altéreraient le fichier**. `ICRCRNL`, lui, n'agit que sur `printchar` — l'écran change, **le journal garde le CR brut**. C'est pourquoi c'est le seul mappage retenu |
 | Réglages en cours | ✅ ils sont dans la trace, en écho, au moment où on les tape |
 | **Sens marqué** | ⚠️ **récupérable, pas marqué.** La structure invite `>` → écho → réponse permet de reconstituer les paires, mais rien ne porte l'étiquette `tx`/`rx` |
 
@@ -649,19 +684,24 @@ journal brut reste l'artefact d'origine et la source de vérité.
 convertir. Jamais convertir d'abord : §4 exige la relecture humaine **avant**
 tout filtre automatique.
 
-⚠️ `[NON VÉRIFIÉ]` **Le journal enregistre-t-il les octets avant ou après
-`--map` ?** La page de manuel ne le dit pas. Si c'est après, le journal contient
-des NL là où la liaison portait des CR — une normalisation de terminateur, pas
-une perte de contenu, mais à savoir avant d'écrire le convertisseur. **Se vérifie
-au bloc A0, gratuitement, au bureau :**
+**Le journal enregistre-t-il les octets avant ou après `--map` ?** La page de
+manuel ne le dit pas ; **le source répond : après, pour les mappages `c_iflag`,
+et jamais pour `ICRCRNL`** (voir la ligne « Brut, non nettoyé » ci-dessus). Donc
+avec l'invocation retenue, le journal doit porter `0d`.
+
+⚠️ **Ce qui reste à confirmer n'est plus la sémantique mais le binaire** : que la
+version installée par Homebrew soit bien celle qu'on a lue. **Se vérifie au bloc
+A0, gratuitement, au bureau :**
 
 ```shell
+tio --version
 xxd traces/2026-XX-XX-4bis-A0.serial.log | head -20
 ```
 
-Chercher `0d` (CR) contre `0a` (NL) en fin de ligne. C'est la vingt-septième
-mesure de la fiche, et la seule qui ne demande ni véhicule ni adaptateur branché
-sur le J1962.
+Chercher `0d` (CR) contre `0a` (NL) en fin de ligne : on attend `0d`. **Un `0a`
+signifierait que la lecture du source ne s'applique pas à ce binaire**, et alors
+tout ce paragraphe est à reprendre. C'est la vingt-septième mesure de la fiche,
+et la seule qui ne demande ni véhicule ni adaptateur branché sur le J1962.
 
 ### 3.4 Emplacement
 
@@ -759,7 +799,7 @@ manquantes, et une mesure manquante veut dire retourner au camion.
 | 24 | Débit : requêtes/s, PID unique et en lot | G | | |
 | 25 | Trace journalisée, aux quatre exigences de §3.1 | toute | | |
 | 26 | Trace anonymisée selon §4.2 | après | | |
-| 27 | Le journal porte-t-il `0d` ou `0a` en fin de ligne ? (§3.3) | A0 | | |
+| 27 | Le journal porte-t-il bien `0d` en fin de ligne, comme le source l'annonce ? Et `tio --version` (§3.3) | A0 | | |
 
 **L'étiquette est une colonne, pas une formalité.** Une mesure faite une fois est
 `[VÉRIFIÉ]` pour cet appareil et ce véhicule — pas pour le matériel en général.

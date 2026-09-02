@@ -77,12 +77,32 @@ contient le dossier, aucun code applicatif n'existe. La section
   `STPTO`, et la commutation MS-CAN n'est plus listée comme inconnue — seul son
   délai l'est.
 - `docs/13` §3.3 — **la procédure de capture sur macOS**, qui rend la séance
-  exécutable : `tio` 3.9 (`--timestamp-format 24hour-start` donne directement le
-  champ `t` relatif de §3.2), le mappage `INLCR` **sans lequel l'adaptateur ne
-  répond à rien**, `--input-mode line` comme **dispositif de sûreté** — une ligne
-  se relit avant de partir, au lieu que chaque frappe soit émise aussitôt — et
-  `/dev/cu.*` plutôt que `/dev/tty.*`, qui bloque sur la porteuse. L'ancien §3.3
-  devient §3.4.
+  exécutable : `tio` 3.9 horodaté relativement au début de séance (une heure
+  murale de moins à anonymiser), `--input-mode line` comme **dispositif de
+  sûreté** — une ligne se relit avant de partir, au lieu que chaque frappe soit
+  émise aussitôt — et `/dev/cu.*` plutôt que `/dev/tty.*`, qui bloque sur la
+  porteuse. L'ancien §3.3 devient §3.4.
+- ⛔ **`docs/13` §3.3 corrigé sur le source de `tio` : sa page de manuel est
+  inversée par rapport à son propre code.** Elle annonce *« input **to** the
+  serial device or output **from** the serial device »* ; en réalité `I*`
+  s'applique au flux **reçu** (`INLCR` est posé dans le `c_iflag` du port) et
+  `O*` au flux **émis** (`forward_to_tty(device_fd, …)`). Le `--map INLCR,OCRNL`
+  d'origine était donc **nuisible et non pas seulement inutile** : `OCRNL`
+  changeait en NL le CR qu'Entrée émet correctement, c'est-à-dire qu'il
+  provoquait la panne qu'il prétendait corriger. Retenu à la place : **`ICRCRNL`
+  seul**, qui rend l'écran lisible, réarme l'horodatage par ligne, et **laisse le
+  journal brut** parce qu'il n'agit que sur l'affichage. Leçon portée au dossier :
+  une page de manuel est une source **secondaire**, et `[VÉRIFIÉ]` sur un outil
+  désigne désormais son source.
+- 🐛 **`docs/13` §3.3 : `24hour-start` ne donne pas le champ `t` de §3.2.** Sa
+  sortie est `hh:mm:ss.mmm`, pas un entier de millisecondes ; la conversion
+  appartient au convertisseur hors ligne. Et `--local-echo` **écrit aussi dans le
+  journal**, donc il ne marquerait pas le sens `tx` — il mêlerait deux sources
+  dans un fichier sans champ pour les séparer. Il reste absent.
+- `docs/07` §4bis et `docs/05` §6 : contradictions avec `13` §3.3 levées —
+  `/dev/tty.usbmodem*` passe à `/dev/cu.*`, et `ATE0` sort de la séquence
+  d'initialisation à caractériser. `docs/13` portait la même contradiction dans
+  sa propre section « Au bureau » (`screen /dev/tty.usbmodem*`).
 - 🐛 **`docs/13` blocs A0 et A : `ATE0` retiré.** Écho coupé, l'adaptateur ne
   renvoie plus les commandes reçues, donc une capture passive ne contient que le
   sens `rx` et **les lignes `tx` de §3.2 deviennent impossibles**. `ATE0` est un
@@ -95,8 +115,9 @@ contient le dossier, aucun code applicatif n'existe. La section
   pas par `AT` ou `ST` est interprétée comme des **octets hexadécimaux à émettre
   sur le bus**. Les notes vont dans un fichier séparé.
 - `docs/13` §5 : la fiche passe à **vingt-sept** mesures — la vingt-septième est
-  la seule qui ne demande ni véhicule ni J1962 (le journal porte-t-il `0d` ou
-  `0a` en fin de ligne, `xxd` au bureau).
+  la seule qui ne demande ni véhicule ni J1962 : `xxd` au bureau pour confirmer
+  que le journal porte bien `0d`, et `tio --version` pour confirmer que le
+  binaire installé est celui dont on a lu le source.
 - `docs/10` §1 : la **nécessité** de réinitialiser après une commutation de bus
   n'est plus une hypothèse mais une conséquence de l'architecture de la puce ;
   seul le **délai** reste à mesurer. §4 gagne l'**étage adaptateur** de la

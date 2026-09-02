@@ -112,7 +112,7 @@ Les items 1 à 4 sont gratuits et prennent moins d'une heure au total. Ils devra
 
 **Pourquoi ça bloque :** c'est le socle de l'étape 1 de la feuille de route de `09` §9. Rien ne se construit avant de savoir comment l'adaptateur se comporte réellement sur ce véhicule.
 
-**Méthode :** un terminal série sur `/dev/tty.usbmodem*`, à la main, avant d'écrire une ligne de Rust. Quelques commandes AT/ST et quelques requêtes.
+**Méthode :** un terminal série sur `/dev/cu.usbmodem*` — ⚠️ **`cu.*` et non `tty.*`, qui bloque sur la porteuse** — à la main, avant d'écrire une ligne de Rust. Quelques commandes AT/ST et quelques requêtes. **L'invocation exacte est en `13` §3.3.**
 
 > ### 📋 **Le protocole détaillé est en `13`, écrit le 2026-08-28 — et la séance a rétréci**
 >
@@ -150,7 +150,7 @@ Les items 1 à 4 sont gratuits et prennent moins d'une heure au total. Ils devra
 
 | À caractériser | Pourquoi |
 |---|---|
-| Séquence d'initialisation qui fonctionne (débit, `ATZ`, `ATE0`, `ATSP`, protocole détecté) | Le pilote série en dépend directement |
+| Séquence d'initialisation qui fonctionne (débit, `ATZ`, `ATSP`, protocole détecté) — ⛔ **sans `ATE0`** : écho coupé, la trace perd son sens `tx` (`13` §3.3). `ATE0` appartient au test délibéré du bloc G | Le pilote série en dépend directement |
 | ~~Commande exacte de commutation MS-CAN~~ ✅ **`STP 53`** — reste **son délai**, la vraie mesure | Sans ça, aucun module de carrosserie n'est joignable (`05` §1.1). La commande est levée sur source primaire ; le délai décide de l'ordonnancement de `10` §1 |
 | **Taille maximale de réponse réassemblée** par l'adaptateur | `09` §3 délègue ISO-TP au firmware — il faut savoir jusqu'où ça tient |
 | Débit réel en requêtes/seconde, PID unique et en lot | Conditionne la durée d'un balayage de DID et les volumes de `04` §1.2 |

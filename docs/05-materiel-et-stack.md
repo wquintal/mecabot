@@ -202,7 +202,7 @@ Aucune pertinence automobile directe : ni OBD, ni gestion AT, ni parsing de prot
 
 **Matériel — deux appareils, ~170 $US :**
 
-1. **OBDLink EX USB (69,95 $)** — diagnostic et commutation MS-CAN/HS-CAN. Seul adaptateur recommandé officiellement par FORScan qui commute électroniquement ; USB-série natif sur macOS ; STN2120 suffisant pour des sessions UDS ; l'option capable la moins chère. Apparaît en `/dev/tty.usbmodemXXXX`.
+1. **OBDLink EX USB (69,95 $)** — diagnostic et commutation MS-CAN/HS-CAN. Seul adaptateur recommandé officiellement par FORScan qui commute électroniquement ; USB-série natif sur macOS ; STN2120 suffisant pour des sessions UDS ; l'option capable la moins chère. Apparaît en `/dev/tty.usbmodemXXXX` — ⚠️ mais **le nœud à ouvrir est `/dev/cu.usbmodemXXXX`** (`13` §3.3).
 2. **comma.ai panda (99 $)** — journalisation CAN brute et reverse engineering. Meilleure expérience macOS (bibliothèque Python multiplateforme), 3 bus, peut surveiller le trafic de diffusion HS-CAN **en parallèle** d'une session diagnostique sur l'OBDLink EX. Alternative économique : CANable en firmware slcan (20-40 $), un seul bus.
 
 **Logiciel :**
