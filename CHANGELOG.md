@@ -89,11 +89,23 @@ contient le dossier, aucun code applicatif n'existe. La section
   `O*` au flux **émis** (`forward_to_tty(device_fd, …)`). Le `--map INLCR,OCRNL`
   d'origine était donc **nuisible et non pas seulement inutile** : `OCRNL`
   changeait en NL le CR qu'Entrée émet correctement, c'est-à-dire qu'il
-  provoquait la panne qu'il prétendait corriger. Retenu à la place : **`ICRCRNL`
-  seul**, qui rend l'écran lisible, réarme l'horodatage par ligne, et **laisse le
-  journal brut** parce qu'il n'agit que sur l'affichage. Leçon portée au dossier :
-  une page de manuel est une source **secondaire**, et `[VÉRIFIÉ]` sur un outil
-  désigne désormais son source.
+  provoquait la panne qu'il prétendait corriger.
+- ⛔ **`docs/13` §3.3, second temps : la première correction posait `ICRCRNL`, qui
+  n'existe pas à la version utilisée.** Le source avait été lu sur la **branche
+  par défaut**, où ce mappage est arrivé *après* 3.9 ; `brew` livre 3.9, dont
+  l'analyseur aurait rejeté la commande au lancement. C'est **la faute que le
+  premier temps venait d'énoncer**, commise une ligne plus bas. Retenu :
+  **`ICRNL`**, avec son coût écrit — le journal porte `0A` là où la liaison
+  portait `0D`. Ce n'est pas gratuit et c'est assumé : à v3.9, l'horodatage par
+  ligne ne se réarme que sur un `'\n'` **reçu**, donc les deux exigences de §3.1
+  (horodaté, et brut) sont **en conflit direct**, et la substitution retenue est
+  uniforme, limitée au terminateur et réversible hors ligne. `--timestamp-timeout`
+  est documenté comme **fausse piste** : il existe, mais il est conditionné au
+  mode d'affichage hexadécimal. Leçon portée au dossier : une page de manuel
+  décrit une intention, un source décrit un comportement, et **le source d'une
+  autre version décrit un autre logiciel** — `[VÉRIFIÉ]` sur un outil porte
+  désormais sur son source **à la version installée**, et les numéros de ligne du
+  document renvoient à l'étiquette `v3.9`.
 - 🐛 **`docs/13` §3.3 : `24hour-start` ne donne pas le champ `t` de §3.2.** Sa
   sortie est `hh:mm:ss.mmm`, pas un entier de millisecondes ; la conversion
   appartient au convertisseur hors ligne. Et `--local-echo` **écrit aussi dans le
